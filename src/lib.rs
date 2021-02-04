@@ -1,9 +1,5 @@
-#![feature(no_core)]
-#![feature(lang_items)]
 #![crate_type="staticlib"]
-#![no_core]
-
-mod lang_items;
+#![no_std]
 
 #[no_mangle]
 pub fn run_game() -> ! {

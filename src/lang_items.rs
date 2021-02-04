@@ -1,3 +1,0 @@
-
-#[lang = "sized"]
-trait Sized {}

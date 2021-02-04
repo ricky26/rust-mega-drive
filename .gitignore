@@ -2,3 +2,6 @@
 /.idea
 Cargo.lock
 *.log
+*.smd
+*.o
+*.elf
