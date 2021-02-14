@@ -3,5 +3,6 @@
 Cargo.lock
 *.log
 *.smd
+*.md
 *.o
 *.elf

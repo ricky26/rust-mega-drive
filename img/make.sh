@@ -10,11 +10,11 @@ CARGO=$RUSTDIR/stage2-tools-bin/cargo
 CLANG=$LLVM_BIN/clang
 LD=$LLVM_BIN/ld.lld
 OBJCOPY=$LLVM_BIN/llvm-objcopy
-TARGET_OUT=../target/$TARGET/debug
+TARGET_OUT=../target/$TARGET/release
 
 pushd ..
-$CARGO -Z build-std=core build --target .cargo/$TARGET.json -v
+$CARGO -Z build-std=core build --release --target .cargo/$TARGET.json -v
 popd
 $CLANG -target $TARGET -c entry.S
-$LD -o img.elf -Ttext=0 entry.o $TARGET_OUT/libtest_project.rlib $TARGET_OUT/deps/libcore-*.rlib $TARGET_OUT/deps/libcompiler_builtins-*.rlib
-$OBJCOPY -O binary img.elf img.smd
+$LD --gc-sections -o img.elf -Ttext=0 entry.o $TARGET_OUT/libtest_project.rlib $TARGET_OUT/deps/libcore-*.rlib $TARGET_OUT/deps/libcompiler_builtins-*.rlib
+$OBJCOPY -O binary img.elf img.md

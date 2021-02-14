@@ -104,10 +104,6 @@ abort:
 _int:
   rte
 
-.global rust_begin_unwind
-rust_begin_unwind:
- bra #run_game
-
 ;
 ; Missing compiler routines
 ;

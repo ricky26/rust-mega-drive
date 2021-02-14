@@ -1,15 +1,20 @@
 #![crate_type="staticlib"]
 #![no_std]
 
+use core::panic::PanicInfo;
+
 mod vdp;
 
 #[no_mangle]
 pub fn run_game() -> ! {
     loop {
         let vdp = vdp::VDP::new();
-
-        unsafe {
-            *(0x123456 as *mut i32) = 1234;
-        }
+        loop {}
     }
+}
+
+#[panic_handler]
+#[no_mangle]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {}
 }
