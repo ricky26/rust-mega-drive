@@ -1,9 +1,8 @@
 /.idea
-target
+/target
 examples/megapong/Cargo.lock
 *.log
 *.smd
-*.md
 *.o
 *.elf
 .env
