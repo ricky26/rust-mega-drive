@@ -6,3 +6,4 @@ examples/megapong/Cargo.lock
 *.md
 *.o
 *.elf
+.env
