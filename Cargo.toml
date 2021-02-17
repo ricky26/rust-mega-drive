@@ -2,6 +2,6 @@
 
 members = [
     "libs/megadrive-sys",
-    "tools/megadrive-rom-builder",
+    "tools/cargo-megadrive",
     "examples/megapong",
 ]
