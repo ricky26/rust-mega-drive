@@ -1,5 +1,4 @@
 use volatile_register::{RW, RO};
-use crate::vdp::registers::VRAM_SIZE;
 
 const DEFAULT_PALETTE: [u16; 16] = [
     0xF0F, 0x000, 0xFFF, 0xF00, 0x0F0, 0x00F, 0x0FF, 0xFF0,
@@ -254,7 +253,7 @@ impl VDP {
     }
 
     pub fn set_tile(&self, index: usize, tile: &[u8; 32]) {
-        self.set_addr(AddrKind::VRAM, ((index as u32) << 5));
+        self.set_addr(AddrKind::VRAM, (index as u32) << 5);
 
         unsafe {
             let ptr: *const u16 = core::mem::transmute(&*tile);
