@@ -66,3 +66,7 @@ you will need to build both.
     ```
 5. You should now have an example megadrive image in
     `target/m68k-none-eabi/release/megapong.md`.
+   
+# License
+This suite is distributed under the terms of the MIT license. The full license
+text can be read in LICENSE.
