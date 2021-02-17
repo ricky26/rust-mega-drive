@@ -1,10 +1,7 @@
-[package]
-name = "test-project"
-version = "0.1.0"
-authors = ["Ricky Taylor <rickytaylor26@gmail.com>"]
-edition = "2018"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-volatile-register = "0.2.0"
+members = [
+    "libs/megadrive-sys",
+    "tools/megadrive-rom-builder",
+    "examples/megapong",
+]

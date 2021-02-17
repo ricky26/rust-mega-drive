@@ -9,6 +9,7 @@ mod vdp;
 pub fn run_game() -> ! {
     loop {
         let vdp = vdp::VDP::new();
+        let _ = core::str::from_utf8(&[0]).unwrap();
         loop {}
     }
 }

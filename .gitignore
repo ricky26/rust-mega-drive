@@ -1,6 +1,6 @@
-/target
 /.idea
-Cargo.lock
+target
+examples/megapong/Cargo.lock
 *.log
 *.smd
 *.md
