@@ -1,9 +1,12 @@
 use core::ptr::{read_volatile, write_volatile};
+use core::ops::Deref;
 
 const REG_VDP_BASE: usize = 0xc00000;
 const REG_VDP_DATA16: *mut u16 = REG_VDP_BASE as _;
 const REG_VDP_CONTROL16: *mut u16 = (REG_VDP_BASE + 4) as _;
 const REG_VDP_CONTROL32: *mut u32 = (REG_VDP_BASE + 4) as _;
+
+const SPRITE_TABLE_OFFSET: u32 = 0xf000;
 
 const DEFAULT_PALETTE: [u16; 16] = [
     0xF0F, 0x000, 0xFFF, 0xF00, 0x0F0, 0x00F, 0x0FF, 0xFF0,
@@ -46,6 +49,10 @@ enum AddrKind {
     VSRAM,
 }
 
+/// A typedef for tile contents.
+type Tile = [u8; 32];
+
+/// An enumeration of valid sprite sizes in tiles.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum SpriteSize {
@@ -203,7 +210,7 @@ impl VDP {
 
             self.set_register(registers::PLANE_A, 0x30);
             self.set_register(registers::PLANE_B, 0x07);
-            self.set_register(registers::SPRITE, 0x78);
+            self.set_register(registers::SPRITE, (SPRITE_TABLE_OFFSET >> 9) as u8);
             self.set_register(registers::WINDOW, 0x34);
             self.set_register(registers::HSCROLL, 0x3d);
 
@@ -231,112 +238,6 @@ impl VDP {
 
             // Default the palette
             self.set_palette(0, &DEFAULT_PALETTE);
-
-            // H
-            self.set_tile(1, &[
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x11, 0x11, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // E
-            self.set_tile(2, &[
-                0x01, 0x11, 0x11, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x11, 0x11, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x11, 0x11, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // L
-            self.set_tile(3, &[
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x11, 0x11, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // O
-            self.set_tile(4, &[
-                0x01, 0x11, 0x11, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x11, 0x11, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // W
-            self.set_tile(5, &[
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x01, 0x01, 0x00,
-                0x01, 0x10, 0x11, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // R
-            self.set_tile(6, &[
-                0x01, 0x10, 0x00, 0x00,
-                0x01, 0x01, 0x10, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x10, 0x00,
-                0x01, 0x11, 0x00, 0x00,
-                0x01, 0x01, 0x00, 0x00,
-                0x01, 0x00, 0x11, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // D
-            self.set_tile(7, &[
-                0x01, 0x10, 0x00, 0x00,
-                0x01, 0x01, 0x10, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x00, 0x01, 0x00,
-                0x01, 0x01, 0x10, 0x00,
-                0x01, 0x10, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-            // !
-            self.set_tile(8, &[
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x01, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ]);
-
-            // HACK: write sprites
-            let mut x = 200;
-            let y = 200;
-
-            self.set_addr(AddrKind::VRAM, 0xf000);
-            let tiles = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
-            let next = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-
-            for (idx, (i, next)) in tiles.iter().cloned().zip(next.iter().cloned()).enumerate() {
-                let mut sprite = Sprite::for_tile(i, SpriteSize::Size1x1);
-                sprite.link = next;
-                sprite.y = y;
-                sprite.x = x;
-                self.set_sprite(idx, &sprite);
-                x += 7;
-            }
         }
     }
 
@@ -371,26 +272,34 @@ impl VDP {
         }
     }
 
-    /// Set the contents of one of the tiles in VRAM.
-    pub fn set_tile(&self, index: usize, tile: &[u8; 32]) {
-        self.set_addr(AddrKind::VRAM, (index as u32) << 5);
+    /// Set the contents of some tiles in VRAM.
+    pub fn set_tiles<T>(&self, start_index: usize, tiles: impl Iterator<Item=T>)
+        where T: Deref<Target=Tile>
+    {
+        self.set_addr(AddrKind::VRAM, (start_index as u32) << 5);
 
-        unsafe {
-            let ptr: *const u16 = core::mem::transmute(&*tile);
-            for i in 0..16isize {
-                write_volatile(REG_VDP_DATA16, *ptr.offset(i));
+        for tile in tiles {
+            unsafe {
+                let ptr: *const u16 = core::mem::transmute(tile.deref());
+                for i in 0..16isize {
+                    write_volatile(REG_VDP_DATA16, *ptr.offset(i));
+                }
             }
         }
     }
 
-    /// Set the contents of a single sprite in the sprite table.
-    pub fn set_sprite(&self, index: usize, sprite: &Sprite) {
-        self.set_addr(AddrKind::VRAM, ((index as u32) << 3) + 0xf000);
+    /// Set the contents of some sprites in the sprite table.
+    pub fn set_sprites<T>(&self, first_index: usize, sprites: impl Iterator<Item=T>)
+        where T: Deref<Target=Sprite>
+    {
+        self.set_addr(AddrKind::VRAM, ((first_index as u32) << 3) + 0xf000);
 
-        unsafe {
-            let src: *const u16 = core::mem::transmute(sprite);
-            for i in 0..4isize {
-                write_volatile(REG_VDP_DATA16, *src.offset(i));
+        for sprite in sprites {
+            unsafe {
+                let src: *const u16 = core::mem::transmute(sprite.deref());
+                for i in 0..4isize {
+                    write_volatile(REG_VDP_DATA16, *src.offset(i));
+                }
             }
         }
     }
