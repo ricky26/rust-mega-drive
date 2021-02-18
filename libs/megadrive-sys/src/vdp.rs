@@ -326,29 +326,15 @@ impl VDP {
             let y = 200;
 
             self.set_addr(AddrKind::VRAM, 0xf000);
-            let sprites = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
-            let next = [1, 2, 3, 4, 5, 0, 6, 7, 8, 9, 10, 11];
+            let tiles = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
+            let next = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-            for (i, next) in sprites.iter().cloned().zip(next.iter().cloned()) {
-                if i == 0 {
-                    x += 7;
-                    continue;
-                }
-
+            for (idx, (i, next)) in tiles.iter().cloned().zip(next.iter().cloned()).enumerate() {
                 let mut sprite = Sprite::for_tile(i, SpriteSize::Size1x1);
                 sprite.link = next;
                 sprite.y = y;
                 sprite.x = x;
-
-                // HACK: it looks like set_sprite() is generating invalid code atm.
-                unsafe {
-                    write_volatile(REG_VDP_DATA16, sprite.y);
-                    write_volatile(REG_VDP_DATA16, ((sprite.size as u16) << 8) | (sprite.link as u16));
-                    write_volatile(REG_VDP_DATA16, sprite.flags);
-                    write_volatile(REG_VDP_DATA16, sprite.x);
-                }
-
-                //self.set_sprite(i as usize, &sprite);
+                self.set_sprite(idx, &sprite);
                 x += 7;
             }
         }
