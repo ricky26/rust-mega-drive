@@ -17,6 +17,7 @@ pub struct Builder {
     target_triple: String,
     profile: String,
     entry: Option<PathBuf>,
+    verbose: bool,
 }
 
 impl Builder {
@@ -68,7 +69,14 @@ impl Builder {
             entry,
             output: None,
             profile: "release".into(),
+            verbose: false,
         })
+    }
+
+    /// Enable verbose logging.
+    pub fn verbose(mut self, v: bool) -> Self {
+        self.verbose = v;
+        self
     }
 
     /// Build the ROM.
@@ -103,9 +111,10 @@ impl Builder {
                 path
             });
 
+        let verbose_flag = OsString::from(if self.verbose { "-v" } else { "" });
         cmd!("cargo", "build", "--manifest-path", &root.manifest_path,
             "-Z", "unstable-options", "-Z", "build-std=core",
-            "--profile", &self.profile, "--target", &self.target)
+            "--profile", &self.profile, "--target", &self.target, verbose_flag)
             .run()?;
 
         let mut objects = vec![];

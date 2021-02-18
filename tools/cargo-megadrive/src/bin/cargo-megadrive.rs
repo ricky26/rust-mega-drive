@@ -6,6 +6,9 @@ struct Opts {
     // This is passed in by cargo.
     _my_command: String,
 
+    #[clap(short, long)]
+    verbose: bool,
+
     #[clap(subcommand)]
     command: Commands,
 }
@@ -27,6 +30,7 @@ fn main() -> anyhow::Result<()> {
     match opts.command {
         Commands::Build(c) => {
             cargo_megadrive::Builder::new(c.manifest_path)?
+                .verbose(opts.verbose)
                 .build()?;
         },
     }
