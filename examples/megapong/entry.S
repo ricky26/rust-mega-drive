@@ -95,6 +95,7 @@
 .global _start
 .global run_game
 _start:
+  move.l #0x1000000, sp
   bra #run_game
 
 .global abort
