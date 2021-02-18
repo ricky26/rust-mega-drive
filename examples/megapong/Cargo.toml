@@ -11,4 +11,4 @@ license = "MIT"
 crate-type = ["staticlib"]
 
 [dependencies]
-volatile-register = "0.2.0"
+megadrive-sys = { path = "../../libs/megadrive-sys" }

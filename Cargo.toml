@@ -5,3 +5,6 @@ members = [
     "tools/cargo-megadrive",
     "examples/megapong",
 ]
+
+[profile.release]
+lto = true

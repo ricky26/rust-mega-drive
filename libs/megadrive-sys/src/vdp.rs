@@ -1,4 +1,9 @@
-use volatile_register::{RW, RO};
+use core::ptr::{read_volatile, write_volatile};
+
+const REG_VDP_BASE: usize = 0xc00000;
+const REG_VDP_DATA16: *mut u16 = REG_VDP_BASE as _;
+const REG_VDP_CONTROL16: *mut u16 = (REG_VDP_BASE + 4) as _;
+const REG_VDP_CONTROL32: *mut u32 = (REG_VDP_BASE + 4) as _;
 
 const DEFAULT_PALETTE: [u16; 16] = [
     0xF0F, 0x000, 0xFFF, 0xF00, 0x0F0, 0x00F, 0x0FF, 0xFF0,
@@ -41,35 +46,154 @@ enum AddrKind {
     VSRAM,
 }
 
-#[repr(C)]
-struct Registers {
-    data_hi: RW<u16>,
-    data_lo: RW<u16>,
-    control_hi: RW<u16>,
-    control_lo: RW<u16>,
-    hv_counter: RO<u16>,
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum SpriteSize {
+    Size1x1 = 0b0000,
+    Size2x1 = 0b0100,
+    Size3x1 = 0b1000,
+    Size4x1 = 0b1100,
+    Size1x2 = 0b0001,
+    Size2x2 = 0b0101,
+    Size3x2 = 0b1001,
+    Size4x2 = 0b1101,
+    Size1x3 = 0b0010,
+    Size2x3 = 0b0110,
+    Size3x3 = 0b1010,
+    Size4x3 = 0b1110,
+    Size1x4 = 0b0011,
+    Size2x4 = 0b0111,
+    Size3x4 = 0b1011,
+    Size4x4 = 0b1111,
 }
 
-pub struct VDP {
-    registers: *mut Registers,
+impl SpriteSize {
+    /// Get the `SpriteSize` given the width and height of the sprite in tiles.
+    pub fn for_size(w: u8, h: u8) -> SpriteSize {
+        assert!((w <= 4) && (h <= 4), "invalid sprite size");
+        unsafe { core::mem::transmute((w - 1) << 2 | (h - 1)) }
+    }
 }
+
+const SPRITE_FLAG_PRIORITY: u16 = 0x8000;
+const SPRITE_FLAG_FLIP_H: u16 = 0x800;
+const SPRITE_FLAG_FLIP_V: u16 = 0x1000;
+
+/// A representation of the hardware sprites supported by the Mega Drive VDP.
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct Sprite {
+    pub y: u16,
+    pub size: SpriteSize,
+    pub link: u8,
+    pub flags: u16,
+    pub x: u16,
+}
+
+impl Sprite {
+    /// Create a new sprite with the tile ID and size set.
+    pub fn for_tile(first_tile_id: u16, size: SpriteSize) -> Self {
+        Sprite {
+            y: 0,
+            size,
+            link: 0,
+            flags: first_tile_id & 0x7ff,
+            x: 0,
+        }
+    }
+
+    /// Return the first tile ID this sprite references.
+    pub fn first_tile_id(&self) -> u16 {
+        self.flags & 0x7ff
+    }
+
+    /// Set the tile this sprite refers to.
+    pub fn set_first_tile_id(&mut self, first_tile_id: u16) {
+        assert_eq!(first_tile_id &! 0x7ff, 0, "tile IDs can only be 11 bits");
+        self.flags = (self.flags &! 0x7ff) | first_tile_id;
+    }
+
+    /// Get the palette index this sprite uses.
+    pub fn palette(&self) -> u8 {
+        (self.flags >> 13) as u8
+    }
+
+    /// Set the palette index this sprite uses.
+    pub fn set_palette(&mut self, palette: u8) {
+        assert!(palette < 4, "only 4 palettes available");
+        self.flags = (self.flags &! 0xe000) | ((palette as u16) << 13);
+    }
+
+    /// Check whether this sprite is high-priority.
+    ///
+    /// High priority sprites render over the top of low priority planes.
+    pub fn high_priority(&self) -> bool {
+        (self.flags & SPRITE_FLAG_PRIORITY) != 0
+    }
+
+    /// Toggle the priority of this sprite.
+    pub fn set_high_priority(&mut self, prio: bool) {
+        if prio {
+            self.flags |= SPRITE_FLAG_PRIORITY;
+        } else {
+            self.flags &=! SPRITE_FLAG_PRIORITY;
+        }
+    }
+
+    /// Check whether this sprite is flipped horizontally.
+    pub fn horizontal_flip(&self) -> bool {
+        (self.flags & SPRITE_FLAG_FLIP_H) != 0
+    }
+
+    /// Set whether this sprite is flipped horizontally.
+    pub fn set_horizontal_flip(&mut self, flip: bool) {
+        if flip {
+            self.flags |= SPRITE_FLAG_FLIP_H;
+        } else {
+            self.flags &=! SPRITE_FLAG_FLIP_H;
+        }
+    }
+
+    /// Check whether this sprite is flipped vertically.
+    pub fn vertical_flip(&self) -> bool {
+        (self.flags & SPRITE_FLAG_FLIP_V) != 0
+    }
+
+    /// Toggle whether this sprite is vertically flipped.
+    pub fn set_vertical_flip(&mut self, flip: bool) {
+        if flip {
+            self.flags |= SPRITE_FLAG_FLIP_H;
+        } else {
+            self.flags &=! SPRITE_FLAG_FLIP_V;
+        }
+    }
+}
+
+impl Default for Sprite {
+    fn default() -> Self {
+        Sprite {
+            y: 0,
+            size: SpriteSize::Size1x1,
+            link: 0,
+            flags: 0,
+            x: 0,
+        }
+    }
+}
+
+pub struct VDP;
 
 impl VDP {
+    /// Initialise and return the VDP.
     pub fn new() -> VDP {
-        let vdp = VDP {
-            registers: 0xc00000 as *mut Registers,
-        };
+        let vdp = VDP;
         vdp.init();
         vdp
     }
 
-    unsafe fn registers(&self) -> &mut Registers {
-        &mut *self.registers
-    }
-
     fn init(&self) {
         unsafe {
-            self.registers().control_hi.read();
+            read_volatile(REG_VDP_CONTROL16);
 
             // Initialise mode.
             self.set_register(registers::MODE_1, 0x04);
@@ -90,18 +214,19 @@ impl VDP {
             self.set_register(registers::BG_COLOUR, 0);
             self.set_register(registers::HBLANK_RATE, 0xFF);
 
-            // Wipe RAM.
+            // Wipe RAM. This should not be strictly necessary since we should
+            // write it as we use it and does have a slight performance penalty.
             self.set_addr(AddrKind::VRAM, 0);
             for _ in 0..registers::VRAM_SIZE/2 {
-                self.registers().data_hi.write(0);
+                write_volatile(REG_VDP_DATA16, 0);
             }
             self.set_addr(AddrKind::VSRAM, 0);
             for _ in 0..registers::VSRAM_SIZE/2 {
-                self.registers().data_hi.write(0);
+                write_volatile(REG_VDP_DATA16, 0);
             }
             self.set_addr(AddrKind::CRAM, 0);
             for _ in 0..registers::CRAM_SIZE/2 {
-                self.registers().data_hi.write(0);
+                write_volatile(REG_VDP_DATA16, 0);
             }
 
             // Default the palette
@@ -210,55 +335,76 @@ impl VDP {
                     continue;
                 }
 
-                self.registers().data_hi.write(y);
-                self.registers().data_hi.write(next);
-                self.registers().data_hi.write(i);
-                self.registers().data_hi.write(x);
+                let mut sprite = Sprite::for_tile(i, SpriteSize::Size1x1);
+                sprite.link = next;
+                sprite.y = y;
+                sprite.x = x;
 
+                // HACK: it looks like set_sprite() is generating invalid code atm.
+                unsafe {
+                    write_volatile(REG_VDP_DATA16, sprite.y);
+                    write_volatile(REG_VDP_DATA16, ((sprite.size as u16) << 8) | (sprite.link as u16));
+                    write_volatile(REG_VDP_DATA16, sprite.flags);
+                    write_volatile(REG_VDP_DATA16, sprite.x);
+                }
+
+                //self.set_sprite(i as usize, &sprite);
                 x += 7;
             }
         }
     }
 
+    /// Directly set a VDP register.
+    ///
+    /// This can interfere with the display state.
     pub unsafe fn set_register(&self, reg: u8, value: u8) {
         let v = ((reg as u16) << 8) | (value as u16);
-        self.registers().control_hi.write(v);
+        write_volatile(REG_VDP_CONTROL16, v);
     }
 
     fn set_addr(&self, kind: AddrKind, ptr: u32) {
-        let (hi, lo) = match kind {
-            AddrKind::VRAM => (0x4000u16, 0u16),
-            AddrKind::VSRAM => (0x4000, 0x10),
-            AddrKind::CRAM => (0xc000, 0),
+        let base = match kind {
+            AddrKind::VRAM => 0x4000_0000,
+            AddrKind::VSRAM => 0x4000_0010,
+            AddrKind::CRAM => 0xc000_0000,
         };
 
-
-        let hi = hi | ((ptr & 0x3fff) as u16);
-        let lo = lo | (((ptr >> 14) & 3) as u16);
-
-        unsafe {
-            self.registers().control_hi.write(hi);
-            self.registers().control_lo.write(lo);
-        }
+        let value = base | ((ptr & 0x3fff) << 16) | ((ptr >> 14) & 3);
+        unsafe { write_volatile(REG_VDP_CONTROL32, value) };
     }
 
+    /// Set one of the 4 configurable palettes.
     pub fn set_palette(&self, index: usize, palette: &[u16; 16]) {
+        assert!(index < 4, "only 4 palettes");
         self.set_addr(AddrKind::CRAM, (index as u32) << 5);
 
         unsafe {
             for x in palette.iter().cloned() {
-                self.registers().data_hi.write(x);
+                write_volatile(REG_VDP_DATA16, x);
             }
         }
     }
 
+    /// Set the contents of one of the tiles in VRAM.
     pub fn set_tile(&self, index: usize, tile: &[u8; 32]) {
         self.set_addr(AddrKind::VRAM, (index as u32) << 5);
 
         unsafe {
             let ptr: *const u16 = core::mem::transmute(&*tile);
-            for i in 0..16 {
-                self.registers().data_hi.write(*ptr.offset(i as isize))
+            for i in 0..16isize {
+                write_volatile(REG_VDP_DATA16, *ptr.offset(i));
+            }
+        }
+    }
+
+    /// Set the contents of a single sprite in the sprite table.
+    pub fn set_sprite(&self, index: usize, sprite: &Sprite) {
+        self.set_addr(AddrKind::VRAM, ((index as u32) << 3) + 0xf000);
+
+        unsafe {
+            let src: *const u16 = core::mem::transmute(sprite);
+            for i in 0..4isize {
+                write_volatile(REG_VDP_DATA16, *src.offset(i));
             }
         }
     }

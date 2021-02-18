@@ -1,8 +1,7 @@
 #![no_std]
 
 use core::panic::PanicInfo;
-
-mod vdp;
+use megadrive_sys::vdp;
 
 #[no_mangle]
 pub fn run_game() -> ! {
