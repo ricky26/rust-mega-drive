@@ -3,11 +3,13 @@
 
 use core::panic::PanicInfo;
 use megadrive_sys::vdp::{VDP, Sprite, SpriteSize};
+use megadrive_input::Controllers;
 
 #[no_mangle]
 pub fn run_game() -> ! {
     loop {
         let vdp = VDP::new();
+        let mut controllers = Controllers::new();
 
         vdp.set_tiles(1, [
             // H
@@ -86,9 +88,16 @@ pub fn run_game() -> ! {
 
         let mut frame = 0u16;
         loop {
+            controllers.update();
+            let c1 = controllers.controller_state(0);
+
             // Write sprites
             let mut x = 200;
-            let y = 200;
+            let mut y = 200;
+
+            if c1.map_or(false, |c| (c.get_down_raw() & 1) != 0) {
+                y += 100;
+            }
 
             let tiles = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
             let next = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];

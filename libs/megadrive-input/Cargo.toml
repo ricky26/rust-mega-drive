@@ -1,5 +1,6 @@
 [package]
-name = "megapong"
+name = "megadrive-input"
+description = "Higher-level support for input devices on the Mega Drive"
 version = "0.1.0"
 authors = ["Ricky Taylor <rickytaylor26@gmail.com>"]
 edition = "2018"
@@ -7,9 +8,5 @@ license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-crate-type = ["staticlib"]
-
 [dependencies]
-megadrive-sys = { path = "../../libs/megadrive-sys" }
-megadrive-input = { path = "../../libs/megadrive-input" }
+megadrive-sys = { path = "../megadrive-sys" }

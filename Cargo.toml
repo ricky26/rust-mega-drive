@@ -2,6 +2,7 @@
 
 members = [
     "libs/megadrive-sys",
+    "libs/megadrive-input",
     "tools/cargo-megadrive",
     "examples/megapong",
 ]
