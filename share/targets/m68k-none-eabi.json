@@ -12,7 +12,9 @@
   "llvm-target": "m68k-none-eabi",
   "max-atomic-width": 0,
   "os": "none",
-  "position-independent-executables": true,
+  "position-independent-executables": false,
+  "code-model": "medium",
+  "relocation-model": "static",
   "pre-link-args": {
     "gcc": [
       "-Wl,--as-needed",

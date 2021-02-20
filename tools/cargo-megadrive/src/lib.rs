@@ -16,6 +16,7 @@ pub struct Builder {
     target: String,
     target_triple: String,
     profile: String,
+    linker_script: PathBuf,
     entry: Option<PathBuf>,
     verbose: bool,
 }
@@ -23,6 +24,10 @@ pub struct Builder {
 impl Builder {
     /// Create a new ROM builder.
     pub fn new(manifest_path: Option<impl Into<PathBuf>>) -> anyhow::Result<Builder> {
+        let sdk_home = env::var("MEGADRIVE_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| "/usr/share/megadrive".into());
+
         let mut cargo_metadata = MetadataCommand::new();
 
         if let Some(manifest_path) = manifest_path {
@@ -30,8 +35,15 @@ impl Builder {
         }
 
         let cargo_metadata = cargo_metadata.exec()?;
-        let target = env::var("MEGADRIVE_TARGET")
+        let mut target = env::var("MEGADRIVE_TARGET")
             .unwrap_or_else(|_| "m68k-none-eabi".into());
+
+        let mut target_json = sdk_home.join("targets");
+        target_json.push(&target);
+        target_json.set_extension("json");
+        if fs::metadata(&target_json).map_or(false, |m| m.is_file()) {
+            target = target_json.to_string_lossy().into_owned();
+        }
 
         let root_package = cargo_metadata.root_package()
             .ok_or(anyhow!("missing root package"))?;
@@ -50,6 +62,9 @@ impl Builder {
             if has_entry { Some(default_entry_path.to_owned()) } else { None }
         });
 
+        let linker_script = metadata.linker_script
+            .unwrap_or_else(|| sdk_home.join("ldscripts/megadrive.x"));
+
         let target_triple = {
             let filename =
                 Path::new(&target)
@@ -66,6 +81,7 @@ impl Builder {
             cargo_metadata,
             target,
             target_triple,
+            linker_script,
             entry,
             output: None,
             profile: "release".into(),
@@ -130,7 +146,7 @@ impl Builder {
 
         let mut link_args: Vec<OsString> = vec![
             "--gc-sections".into(),
-            "-o".into(), OsString::from(&elf), "-Ttext=0".into()];
+            "-o".into(), OsString::from(&elf), "-T".into(), self.linker_script.into()];
         link_args.extend(objects.into_iter().map(|o| o.into_os_string()));
         link_args.push(OsString::from(staticlib));
         cmd(llvm_config.ld_lld()?, &link_args).run()?;
