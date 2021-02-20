@@ -13,7 +13,7 @@ impl IOPort {
     /// A one indicates the pin is used as output.
     pub fn set_pin_directions_raw(&self, directions: u8) {
         unsafe {
-            write_volatile(self.0.offset(6), directions & 0x3f);
+            write_volatile(self.0.offset(6), directions & 0x7f);
         }
     }
 

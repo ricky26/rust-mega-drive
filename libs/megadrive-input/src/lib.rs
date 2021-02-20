@@ -71,17 +71,17 @@ impl Controllers {
         self.controllers[index].as_ref()
     }
 
-    fn read_pins_half() -> (u8, u8) {
+    fn read_pins_half(v: u8) -> (u8, u8) {
         let c1 = ports::controller_1();
         let c2 = ports::controller_2();
 
-        c1.set_pins(0x40);
-        c2.set_pins(0x40);
+        c1.set_pins(v);
+        c2.set_pins(v);
 
         // HACK: these could be NOPs but asm!() is not stable.
-        c1.set_pins(0x40);
-        c1.set_pins(0x40);
-        c1.set_pins(0x40);
+        c1.set_pins(v);
+        c1.set_pins(v);
+        c1.set_pins(v);
 
         let c1pins = c1.get_pins();
         let c2pins = c2.get_pins();
@@ -90,8 +90,8 @@ impl Controllers {
     }
 
     fn read_pins() -> (u16, u16) {
-        let (c1lo, c2lo) = Controllers::read_pins_half();
-        let (c1hi, c2hi) = Controllers::read_pins_half();
+        let (c1lo, c2lo) = Controllers::read_pins_half(0x40);
+        let (c1hi, c2hi) = Controllers::read_pins_half(0x00);
 
         let c1pins = ((c1hi as u16) << 8) | (c1lo as u16);
         let c2pins = ((c2hi as u16) << 8) | (c2lo as u16);
@@ -129,28 +129,25 @@ impl Controllers {
         // buttons.
 
         let (c1_pins, c2_pins) = Controllers::read_pins();
-        let mut c1_buttons = (c1_pins & 0x3f) | ((c1_pins >> 12) & 0x3);
-        let mut c2_buttons = (c2_pins & 0x3f) | ((c2_pins >> 12) & 0x3);
+        let mut c1_buttons = (c1_pins & 0x3f) | ((c1_pins >> 6) & 0xc0);
+        let mut c2_buttons = (c2_pins & 0x3f) | ((c2_pins >> 6) & 0xc0);
 
-        let c1_connected = ((c1_pins >> 10) & 3) == 0;
-        let c2_connected = ((c2_pins >> 10) & 3) == 0;
+        let c1_connected = (c1_pins & 0xc00) == 0;
+        let c2_connected = (c2_pins & 0xc00) == 0;
 
         Controllers::read_pins();
         let (c1_test, c2_test) = Controllers::read_pins();
 
-        let c1_is6 = (c1_test & 7) == 0;
-        let c2_is6 = (c2_test & 7) == 0;
+        let c1_is6 = (c1_test & 0xf) == 0;
+        let c2_is6 = (c2_test & 0xf) == 0;
+        let (c1_ext, c2_ext) = Controllers::read_pins_half(0x40);
 
-        if c1_is6 || c2_is6 {
-            let (c1_ext, c2_ext) = Controllers::read_pins_half();
+        if c1_is6 {
+            c1_buttons |= ((c1_ext as u16) & 0xf) << 8;
+        }
 
-            if c1_is6 {
-                c1_buttons |= ((c1_ext as u16) & 0xf) << 8;
-            }
-
-            if c2_is6 {
-                c2_buttons |= ((c2_ext as u16) & 0xf) << 8;
-            }
+        if c2_is6 {
+            c2_buttons |= ((c2_ext as u16) & 0xf) << 8;
         }
 
         Controllers::update_state(&mut self.controllers[0], c1_connected, c1_is6, c1_buttons);

@@ -116,7 +116,8 @@ pub fn main() -> ! {
                     my_frame
                 };
 
-                if idx < 16 && (buttons & (1 << idx)) != 0 {
+                let down = ((buttons >> idx) & 1) != 0;
+                if (idx < 16) && down {
                     my_y += 100;
                 }
 
