@@ -1,10 +1,10 @@
 .text
-.org 0x0000
+.org 0
 
 .set START, _start
 .set INT, _int
 .set HBLANK, _int
-.set VBLANK, _int
+.set VBLANK, _vblank
 
 .long 0x0             ; Initial Stack Address
 .long START           ; Start of program Code
@@ -92,36 +92,27 @@
 .ascii  "                "
 .ascii  "F               "      ; enable any hardware configuration
 
+.global vblank
+_vblank:
+  jsr vblank
+  rte
+
 .global _start
-.global run_game
+.global main
 _start:
-  move.l #0x1000000, sp
-  bra #run_game
+  move.l #_heap_end, sp
+  move.w #0x2500, sr
+  jsr _init_runtime
+  bra #main
 
 .global abort
 abort:
-  bra #run_game
+  bra #abort
 
 _int:
   rte
 
-;
-; Missing compiler routines
-;
-
-.global __mulsi3
-__mulsi3:
-  bra #__mulsi3
-;  move.l d2, -(sp)
-;  move.l d0, -(sp)
-;  mulu d1, d0
-;  move.l d1, d2
-;  mulu (sp)+, d1
-;  swap d2
-;  mulu (sp)+, d2
-;  add.w d2, d1
-;  swap d1
-;  move.l (sp)+, d2
-;  clr.w d1
-;  add.l d1, d0
-;  rts
+.global wait_for_interrupt
+wait_for_interrupt:
+  stop #0x2500
+  rts

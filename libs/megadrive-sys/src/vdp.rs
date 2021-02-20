@@ -204,7 +204,7 @@ impl VDP {
 
             // Initialise mode.
             self.set_register(registers::MODE_1, 0x04);
-            self.set_register(registers::MODE_2, 0x44);
+            self.set_register(registers::MODE_2, 0x64);
             self.set_register(registers::MODE_3, 0x00);
             self.set_register(registers::MODE_4, 0x81);
 

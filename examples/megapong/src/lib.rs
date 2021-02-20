@@ -4,9 +4,16 @@
 use core::panic::PanicInfo;
 use megadrive_sys::vdp::{VDP, Sprite, SpriteSize};
 use megadrive_input::Controllers;
+use core::ptr::{read_volatile, write_volatile};
+
+static mut NEW_FRAME: u16 = 0;
+
+extern "C" {
+    fn wait_for_interrupt();
+}
 
 #[no_mangle]
-pub fn run_game() -> ! {
+pub fn main() -> ! {
     loop {
         let vdp = VDP::new();
         let mut controllers = Controllers::new();
@@ -90,39 +97,53 @@ pub fn run_game() -> ! {
         loop {
             controllers.update();
             let c1 = controllers.controller_state(0);
+            let buttons = c1.map_or(0, |c| c.get_down_raw());
 
             // Write sprites
             let mut x = 200;
-            let mut y = 200;
-
-            if c1.map_or(false, |c| (c.get_down_raw() & 1) != 0) {
-                y += 100;
-            }
+            let y = 200;
 
             let tiles = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
             let next = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
 
-            let anim_frame = (frame >> 4) & 0x3f;
+            let anim_frame = (frame >> 1) & 0x3f;
 
             for (idx, (i, next)) in tiles.iter().cloned().zip(next.iter().cloned()).enumerate() {
                 let my_frame = (anim_frame + (idx as u16)) & 0x3f;
-                let y_off = if my_frame >= 32 {
+                let mut my_y = y + if my_frame >= 32 {
                     63 - my_frame
                 } else {
                     my_frame
                 };
 
+                if idx < 16 && (buttons & (1 << idx)) != 0 {
+                    my_y += 100;
+                }
+
                 let mut sprite = Sprite::for_tile(i, SpriteSize::Size1x1);
                 sprite.link = next;
-                sprite.y = y + y_off;
+                sprite.y = my_y;
                 sprite.x = x;
                 vdp.set_sprites(idx, [sprite].iter());
                 x += 7;
             }
 
             frame = (frame + 1) & 0x7fff;
+
+            // vsync
+            unsafe {
+                while read_volatile(&NEW_FRAME) == 0 {
+                    wait_for_interrupt();
+                }
+                NEW_FRAME = 0;
+            }
         }
     }
+}
+
+#[no_mangle]
+fn vblank() {
+    unsafe { write_volatile(&mut NEW_FRAME, 1) };
 }
 
 #[panic_handler]
