@@ -129,8 +129,8 @@ impl Controllers {
         // buttons.
 
         let (c1_pins, c2_pins) = Controllers::read_pins();
-        let mut c1_buttons = (c1_pins & 0x3f) | ((c1_pins >> 6) & 0xc0);
-        let mut c2_buttons = (c2_pins & 0x3f) | ((c2_pins >> 6) & 0xc0);
+        let mut c1_buttons = (!c1_pins & 0x3f) | ((!c1_pins >> 6) & 0xc0);
+        let mut c2_buttons = (!c2_pins & 0x3f) | ((!c2_pins >> 6) & 0xc0);
 
         let c1_connected = (c1_pins & 0xc00) == 0;
         let c2_connected = (c2_pins & 0xc00) == 0;
