@@ -1,7 +1,9 @@
 #![no_std]
 
+pub mod z80;
 pub mod vdp;
 pub mod ports;
+pub mod fm;
 
 extern "C" {
     static _data_src: *const u32;
@@ -13,6 +15,15 @@ extern "C" {
 
 #[no_mangle]
 fn _init_runtime() {
+    // Shutdown the Z80 and set it up for RAM access.
+    // This is required to access peripherals on the Z80 bus.
+    // More consideration will be needed here when the Z80 is considered for
+    // use proper.
+    z80::halt(true);
+    z80::request_bus(true);
+    z80::halt(false);
+
+    // Copy .data & zero .bss.
     unsafe {
         let data_count = _data_end.offset_from(_data_start) as usize;
         let data_src = core::slice::from_raw_parts(_data_src, data_count);
