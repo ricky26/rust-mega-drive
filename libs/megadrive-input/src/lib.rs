@@ -1,6 +1,12 @@
 #![no_std]
 
 use megadrive_sys::ports;
+use core::ptr::read_volatile;
+
+// HACK: This isn't really a NOP but it'll take at least as long as a NOP.
+fn nop() {
+    unsafe { read_volatile(0 as _) }
+}
 
 /// ControllerState represents the last-read state of the controller.
 #[derive(Clone, Debug)]
@@ -77,11 +83,9 @@ impl Controllers {
 
         c1.set_pins(v);
         c2.set_pins(v);
-
-        // HACK: these could be NOPs but asm!() is not stable.
-        c1.set_pins(v);
-        c1.set_pins(v);
-        c1.set_pins(v);
+        nop();
+        nop();
+        nop();
 
         let c1pins = c1.get_pins();
         let c2pins = c2.get_pins();
@@ -136,18 +140,17 @@ impl Controllers {
         let c2_connected = (c2_pins & 0xc00) == 0;
 
         Controllers::read_pins();
-        let (c1_test, c2_test) = Controllers::read_pins();
+        let (c1_ext1, c2_ext1) = Controllers::read_pins();
 
-        let c1_is6 = (c1_test & 0xf) == 0;
-        let c2_is6 = (c2_test & 0xf) == 0;
-        let (c1_ext, c2_ext) = Controllers::read_pins_half(0x40);
+        let c1_is6 = (c1_ext1 & 0xf00) == 0xf00;
+        let c2_is6 = (c2_ext1 & 0xf00) == 0xf00;
 
         if c1_is6 {
-            c1_buttons |= ((c1_ext as u16) & 0xf) << 8;
+            c1_buttons |= ((!c1_ext1 as u16) & 0xf) << 8;
         }
 
         if c2_is6 {
-            c2_buttons |= ((c2_ext as u16) & 0xf) << 8;
+            c2_buttons |= ((!c2_ext1 as u16) & 0xf) << 8;
         }
 
         Controllers::update_state(&mut self.controllers[0], c1_connected, c1_is6, c1_buttons);
