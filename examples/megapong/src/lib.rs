@@ -18,7 +18,7 @@ pub fn main() -> ! {
         let vdp = VDP::new();
         let mut controllers = Controllers::new();
 
-        vdp.set_tiles(1, [
+        static TILE_DATA: [u8; 256] = [
             // H
             0x01, 0x00, 0x01, 0x00,
             0x01, 0x00, 0x01, 0x00,
@@ -91,7 +91,8 @@ pub fn main() -> ! {
             0x00, 0x00, 0x00, 0x00,
             0x01, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00,
-        ].array_chunks());
+        ];
+        vdp.set_tiles(1, TILE_DATA.array_chunks());
 
         let mut frame = 0u16;
         loop {
@@ -103,21 +104,22 @@ pub fn main() -> ! {
             let mut x = 200;
             let y = 200;
 
-            let tiles = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
-            let next = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
+            static TILE_INDICES: [u16; 13] = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
+            static NEXT: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0];
 
             let anim_frame = (frame >> 1) & 0x3f;
 
-            for (idx, (i, next)) in tiles.iter().cloned().zip(next.iter().cloned()).enumerate() {
+            for (idx, (i, next)) in TILE_INDICES.iter().cloned().zip(NEXT.iter().cloned()).enumerate() {
                 let my_frame = (anim_frame + (idx as u16)) & 0x3f;
                 let mut my_y = y + if my_frame >= 32 {
                     63 - my_frame
-                } else {
+                } else
+                {
                     my_frame
                 };
 
                 let down = ((buttons >> idx) & 1) != 0;
-                if (idx < 16) && down {
+                if down {
                     my_y += 100;
                 }
 
