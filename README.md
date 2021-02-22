@@ -46,7 +46,7 @@ you will need to build both.
 ### Building this repository
 1. Set the required environment variables:
     ```
-    export MEGADRIVE_TARGET=path/to/repo/targets/m68k-none-eabi.json
+    export MEGADRIVE_HOME=path/to/repo
     export RUSTUP_TOOLCHAIN=m68k
     export LLVM_CONFIG=path=/to/llvm/build/bin/llvm-config
     ```
