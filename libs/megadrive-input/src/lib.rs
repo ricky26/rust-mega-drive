@@ -75,11 +75,11 @@ impl Controllers {
     pub fn new() -> Controllers {
         // Configure the controllers for input except for the 'clock' pin.
         let c1 = ports::controller_1();
-        c1.set_pin_directions_raw(0x40);
+        c1.set_pin_directions_raw(0x40, false);
         c1.set_pins(0x40);
 
         let c2 = ports::controller_2();
-        c2.set_pin_directions_raw(0x40);
+        c2.set_pin_directions_raw(0x40, false);
         c2.set_pins(0x40);
 
         let controllers = unsafe {
