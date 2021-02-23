@@ -1,6 +1,6 @@
 #![no_std]
 
-use core::ptr::read_volatile;
+use core::ptr::{read_volatile, write_volatile};
 
 pub mod z80;
 pub mod vdp;
@@ -17,6 +17,9 @@ extern "C" {
 
 #[no_mangle]
 fn _init_runtime() {
+    // Implement SEGA copy protection.
+    init_tmss();
+
     // Shutdown the Z80 and set it up for RAM access.
     // This is required to access peripherals on the Z80 bus.
     // More consideration will be needed here when the Z80 is considered for
@@ -109,4 +112,17 @@ const VERSION_REG: *mut u8 = (0xa10001) as _;
 pub fn version() -> Version {
     let v = unsafe { read_volatile(VERSION_REG) };
     Version(v)
+}
+
+// TMSS - copy protection for the Mega Drive.
+const TMSS_CODE: &'static [u8; 4] = b"SEGA";
+const TMSS_REG: *mut u32 = 0xa14000 as _;
+
+fn init_tmss() {
+    if version().hardware_revision() > 0 {
+        unsafe {
+            let tmss_code: *const u32 = core::mem::transmute(&TMSS_CODE[0]);
+            write_volatile(TMSS_REG, *tmss_code);
+        }
+    }
 }
