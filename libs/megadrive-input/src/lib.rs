@@ -8,6 +8,23 @@ fn nop() {
     unsafe { read_volatile(0 as _) }
 }
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum Button {
+    Up = 0,
+    Down = 1,
+    Left = 2,
+    Right = 3,
+    B = 4,
+    C = 5,
+    A = 6,
+    Start = 7,
+    Z = 8,
+    Y = 9,
+    X = 10,
+    Mode = 11,
+}
+
 /// ControllerState represents the last-read state of the controller.
 #[derive(Clone, Debug)]
 pub struct ControllerState {
@@ -23,12 +40,22 @@ impl ControllerState {
     }
 
     /// Return the mask of buttons which are currently down.
-    pub fn get_down_raw(&self) -> u16 { self.buttons }
+    pub fn down_raw(&self) -> u16 { self.buttons }
 
     /// Return the bitmask of buttons which have been pressed down since last
     /// frame.
-    pub fn get_pressed_raw(&self) -> u16 {
+    pub fn pressed_raw(&self) -> u16 {
         self.buttons &! self.last_buttons
+    }
+
+    /// Returns true if a given button is down.
+    pub fn down(&self, btn: Button) -> bool {
+        (self.down_raw() & (1 << (btn as u8))) != 0
+    }
+
+    /// Returns true if a given button was pressed this frame.
+    pub fn pressed(&self, btn: Button) -> bool {
+        (self.down_raw() & (1 << (btn as u8))) != 0
     }
 }
 
