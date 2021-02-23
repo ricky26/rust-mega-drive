@@ -3,9 +3,10 @@
 
 use core::panic::PanicInfo;
 use megadrive_sys::vdp::{VDP, Sprite, SpriteSize};
-use megadrive_sys::fm::{FM, Note, Panning};
-use megadrive_input::Controllers;
+use megadrive_sys::fm::{FM, Note, Panning, Channel};
+use megadrive_input::{Controllers, Button};
 use core::ptr::{read_volatile, write_volatile};
+use megadrive_graphics::Renderer;
 
 static mut NEW_FRAME: u16 = 0;
 
@@ -13,170 +14,306 @@ extern "C" {
     fn wait_for_interrupt();
 }
 
+fn setup_piano(ch: &Channel) {
+
+    let op0 = ch.operator(0);
+    op0.set_multiplier(1, 7);
+    op0.set_total_level(35);
+    op0.set_attack_rate(63, 1);
+    op0.set_decay_rate(5, false);
+    op0.set_sustain_rate(2);
+    op0.set_release_rate(1, 1);
+
+    let op1 = ch.operator(1);
+    op1.set_multiplier(13, 0);
+    op1.set_total_level(45);
+    op1.set_attack_rate(25, 2);
+    op1.set_decay_rate(5, false);
+    op1.set_sustain_rate(2);
+    op1.set_release_rate(1, 1);
+
+    let op2 = ch.operator(2);
+    op2.set_multiplier(3, 3);
+    op2.set_total_level(38);
+    op2.set_attack_rate(63, 1);
+    op2.set_decay_rate(5, false);
+    op2.set_sustain_rate(2);
+    op2.set_release_rate(1, 1);
+
+    let op3 = ch.operator(3);
+    op3.set_multiplier(1, 0);
+    op3.set_total_level(0);
+    op3.set_attack_rate(20, 2);
+    op3.set_decay_rate(7, false);
+    op3.set_sustain_rate(2);
+    op3.set_release_rate(6, 10);
+
+    ch.set_algorithm(2, 6);
+    ch.set_panning(Panning::Both, 0, 0);
+    ch.set_frequency(Note::F, 5);
+}
+
 #[no_mangle]
 pub fn main() -> ! {
     loop {
-        let mut fm = FM::new();
+        let fm = FM::new();
         let vdp = VDP::new();
         let mut controllers = Controllers::new();
 
         // Load graphics.
-        static TILE_DATA: [u8; 256] = [
-            // H
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x11, 0x11, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
+        static TILE_DATA: [u8; 32 * 11] = [
+            // H - 8
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x88, 0x88, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // E
-            0x01, 0x11, 0x11, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x11, 0x11, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x11, 0x11, 0x00,
+            // E - 2
+            0x08, 0x88, 0x88, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x88, 0x88, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x88, 0x88, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // L
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x11, 0x11, 0x00,
+            // L - 3
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x88, 0x88, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // O
-            0x01, 0x11, 0x11, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x11, 0x11, 0x00,
+            // O - 4
+            0x08, 0x88, 0x88, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x88, 0x88, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // W
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x01, 0x01, 0x00,
-            0x01, 0x10, 0x11, 0x00,
-            0x01, 0x00, 0x01, 0x00,
+            // W - 5
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x08, 0x08, 0x00,
+            0x08, 0x80, 0x88, 0x00,
+            0x08, 0x00, 0x08, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // R
-            0x01, 0x10, 0x00, 0x00,
-            0x01, 0x01, 0x10, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x10, 0x00,
-            0x01, 0x11, 0x00, 0x00,
-            0x01, 0x01, 0x00, 0x00,
-            0x01, 0x00, 0x11, 0x00,
+            // R - 6
+            0x08, 0x80, 0x00, 0x00,
+            0x08, 0x08, 0x80, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x80, 0x00,
+            0x08, 0x88, 0x00, 0x00,
+            0x08, 0x08, 0x00, 0x00,
+            0x08, 0x00, 0x88, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // D
-            0x01, 0x10, 0x00, 0x00,
-            0x01, 0x01, 0x10, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x00, 0x01, 0x00,
-            0x01, 0x01, 0x10, 0x00,
-            0x01, 0x10, 0x00, 0x00,
+            // D - 7
+            0x08, 0x80, 0x00, 0x00,
+            0x08, 0x08, 0x80, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x00, 0x08, 0x00,
+            0x08, 0x08, 0x80, 0x00,
+            0x08, 0x80, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            // !
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
+            // ! - 8
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00,
-            0x01, 0x00, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00,
+            // Ball - 9
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x11, 0x11, 0x00,
+            0x00, 0x11, 0x11, 0x00,
+            0x00, 0x11, 0x11, 0x00,
+            0x00, 0x11, 0x11, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            // Paddle Half - 10
+            0x00, 0x00, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            // Paddle Half - 11
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x01, 0x10, 0x00,
+            0x00, 0x00, 0x10, 0x00,
         ];
         vdp.set_tiles(1, TILE_DATA.array_chunks());
 
-        // Setup synth.
-        fm.set_multiplier(0, 0, 1, 7);
-        fm.set_multiplier(0, 1, 13, 0);
-        fm.set_multiplier(0, 2, 3, 3);
-        fm.set_multiplier(0, 3, 1, 0);
+        let mut renderer = Renderer::new();
 
-        fm.set_total_level(0, 0, 35);
-        fm.set_total_level(0, 1, 45);
-        fm.set_total_level(0, 2, 38);
-        fm.set_total_level(0, 3, 0);
+        let paddle_hit = fm.channel(0);
+        setup_piano(&paddle_hit);
 
-        fm.set_attack_rate(0, 0, 63, 1);
-        fm.set_attack_rate(0, 1, 25, 2);
-        fm.set_attack_rate(0, 2, 63, 1);
-        fm.set_attack_rate(0, 3, 20, 2);
+        let screen_hit = fm.channel(1);
+        setup_piano(&screen_hit);
+        screen_hit.set_frequency(Note::C, 4);
 
-        fm.set_decay_rate(0, 0, 5, false);
-        fm.set_decay_rate(0, 1, 5, false);
-        fm.set_decay_rate(0, 2, 5, false);
-        fm.set_decay_rate(0, 3, 7, false);
+        let mut bx = 0;
+        let mut by = 0;
+        let mut dx = 3;
+        let mut dy = 3;
 
-        fm.set_sustain_rate(0, 0, 2);
-        fm.set_sustain_rate(0, 1, 2);
-        fm.set_sustain_rate(0, 2, 2);
-        fm.set_sustain_rate(0, 3, 2);
+        let mut p0y = 0;
+        let mut p1y = 0;
 
-        fm.set_release_rate(0, 0, 1, 1);
-        fm.set_release_rate(0, 1, 1, 1);
-        fm.set_release_rate(0, 2, 1, 1);
-        fm.set_release_rate(0, 3, 6, 10);
+        let paddle_speed = 5;
+        let half_screen_width = 160;
+        let half_border_height = 112;
+        //let screen_width = half_screen_width * 2;
+        //let border_height = half_border_height * 2;
+        let game_border = 9;
+        let half_border_width = half_screen_width - game_border;
+        let half_border_height = half_border_height - game_border;
 
-        fm.set_algorithm(0, 2, 6);
-        fm.set_panning(0, Panning::Both, 0, 0);
-        fm.set_frequency(0, Note::F, 5);
+        let x_off = 128 + half_screen_width;
+        let y_off = 128 + half_border_height;
+
+        let update_player = |controllers: &Controllers, idx: usize, y: &mut i16, by: i16| {
+            if let Some(c) = controllers.controller_state(idx) {
+                if c.down(Button::Up) {
+                    *y = (*y - paddle_speed).max(-half_border_height)
+                } else if c.down(Button::Down) {
+                    *y = (*y + paddle_speed).min(half_border_height)
+                }
+            } else {
+                *y = by;
+            }
+        };
 
         let mut frame = 0u16;
         loop {
+            renderer.clear();
             controllers.update();
-            let c1 = controllers.controller_state(0);
-            let buttons = c1.map_or(0, |c| c.get_down_raw());
 
-            // Make music.
-            match frame & 127 {
-                0 => fm.set_key(0, true),
-                64 => fm.set_key(0, false),
-                _ => {},
+            // Update players
+            update_player(&controllers, 0, &mut p0y, by);
+            update_player(&controllers, 1, &mut p1y, by);
+
+            // Draw Text
+            {
+                let mut x = x_off - 6 * 7;
+                let y = y_off;
+
+                static TILE_INDICES: [u16; 12] = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8];
+                let anim_frame = (frame >> 1) & 0x3f;
+
+                for (idx, tile_id) in TILE_INDICES.iter().cloned().enumerate() {
+                    let my_frame = (anim_frame + (idx as u16)) & 0x3f;
+                    let mut my_y = y + if my_frame >= 32 {
+                        31 - (my_frame as i16)
+                    } else {
+                        (my_frame as i16) - 32
+                    };
+
+                    let buttons = controllers.controller_state(0).map_or(0, |c| c.down_raw());
+                    let down = ((buttons >> idx) & 1) != 0;
+                    if down {
+                        my_y += 4;
+                    }
+
+                    let mut sprite = Sprite::for_tile(tile_id, SpriteSize::Size1x1);
+                    sprite.y = my_y as u16;
+                    sprite.x = x as u16;
+                    renderer.draw_sprite(sprite);
+                    x += 7;
+                }
             }
 
-            // Write sprites
-            let mut x = 200;
-            let y = 200;
+            // Draw pong.
+            {
+                let mut s = Sprite::for_tile(10, SpriteSize::Size1x2);
+                s.set_high_priority(true);
 
-            static TILE_INDICES: [u16; 13] = [1, 2, 3, 3, 4, 0, 5, 4, 6, 3, 7, 8, 9];
-            static NEXT: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0];
+                // P1
+                s.x = ((x_off - half_screen_width) + game_border) as u16;
+                s.y = (y_off + p0y) as u16;
+                renderer.draw_sprite(s.clone());
 
-            let anim_frame = (frame >> 1) & 0x3f;
+                // P2
+                s.set_horizontal_flip(true);
+                s.x = ((x_off + half_screen_width) - game_border) as u16;
+                s.y = (y_off + p1y) as u16;
+                renderer.draw_sprite(s);
 
-            for (idx, (i, next)) in TILE_INDICES.iter().cloned().zip(NEXT.iter().cloned()).enumerate() {
-                let my_frame = (anim_frame + (idx as u16)) & 0x3f;
-                let mut my_y = y + if my_frame >= 32 {
-                    63 - my_frame
-                } else
-                {
-                    my_frame
-                };
+                // Ball;
+                let mut s = Sprite::for_tile(9, SpriteSize::Size1x1);
+                s.set_high_priority(true);
+                s.x = (x_off + bx) as u16;
+                s.y = (y_off + by) as u16;
+                renderer.draw_sprite(s);
+            }
 
-                let down = ((buttons >> idx) & 1) != 0;
-                if down {
-                    my_y += 100;
+            // Update pong.
+            {
+                bx += dx;
+                by += dy;
+
+                let mut hit = false;
+                let mut paddle = false;
+
+                let half_ball_width = half_border_width - 1;
+
+                if bx < -half_ball_width {
+                    bx = - half_ball_width - half_ball_width - bx;
+                    dx = -dx;
+                    hit = true;
+                    paddle = (by > (p0y - 8)) && (by < (p0y + 8));
+                } else if bx > half_ball_width {
+                    bx = half_ball_width + half_ball_width - bx;
+                    dx = -dx;
+                    hit = true;
+                    paddle = (by > (p1y - 8)) && (by < (p1y + 8));
                 }
 
-                let mut sprite = Sprite::for_tile(i, SpriteSize::Size1x1);
-                sprite.link = next;
-                sprite.y = my_y;
-                sprite.x = x;
-                vdp.set_sprites(idx, [sprite].iter());
-                x += 7;
+                if by < -half_border_height {
+                    by = - half_border_height - half_border_height - by;
+                    dy = -dy;
+                    hit = true;
+                } else if by > half_border_height {
+                    by = half_border_height + half_border_height - by;
+                    dy = -dy;
+                    hit = true;
+                }
+
+                if hit {
+                    if paddle {
+                        paddle_hit.set_key(true)
+                    } else {
+                        screen_hit.set_key(true);
+                    }
+                } else {
+                    paddle_hit.set_key(false);
+                    screen_hit.set_key(false);
+                }
             }
 
             frame = (frame + 1) & 0x7fff;
+            renderer.render(&vdp);
 
             // vsync
             unsafe {
