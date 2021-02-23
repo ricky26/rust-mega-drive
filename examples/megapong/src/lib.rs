@@ -332,8 +332,6 @@ pub fn main() -> ! {
         // vsync
         wait_for_vblank();
     }
-
-    unreachable!();
 }
 
 fn wait_for_vblank() {
