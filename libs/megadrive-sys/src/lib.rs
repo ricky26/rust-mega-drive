@@ -1,5 +1,7 @@
 #![no_std]
 
+use core::ptr::read_volatile;
+
 pub mod z80;
 pub mod vdp;
 pub mod ports;
@@ -38,4 +40,73 @@ fn _init_runtime() {
             *b = 0;
         }
     }
+}
+
+/// An enum for the various region variants of the Mega Drive.
+#[derive(Clone, Copy, Debug)]
+pub enum Region {
+    Invalid,
+    Japan,
+    Europe,
+    USA,
+}
+
+/// A struct containing version information extracted from the console.
+///
+/// This can be used to determine region, resolution, frame rate and hardware
+/// revision.
+#[derive(Clone, Copy, Debug)]
+pub struct Version(u8);
+
+impl Version {
+    /// Retrieve the hardware revision.
+    pub fn hardware_revision(self) -> u8 { self.0 & 0xf }
+
+    /// Check if a FDD is attached.
+    pub fn has_fdd(self) -> bool { (self.0 & 0x20) != 0 }
+
+    /// Returns true if this is a PAL system.
+    pub fn is_pal(self) -> bool { (self.0 & 0x40) != 0 }
+
+    /// Returns true if this is a NTSC system.
+    pub fn is_ntsc(self) -> bool { !self.is_pal() }
+
+    /// Returns true if this is an 'overseas' model, i.e. not for use in Japan.
+    pub fn is_overseas(self) -> bool { (self.0 & 0x80) != 0 }
+
+    /// Return the region variation of this console.
+    pub fn region(self) -> Region {
+        match (self.is_pal(), self.is_overseas()) {
+            (false, false) => Region::Japan,
+            (false, true) => Region::USA,
+            (true, false) => Region::Europe,
+            (true, true) => Region::Invalid,
+        }
+    }
+
+    /// Fetch the framerate of this console.
+    pub fn framerate(self) -> u8 {
+        if self.is_pal() {
+            50
+        } else {
+            60
+        }
+    }
+
+    /// Fetch the operating resolution of this console.
+    pub fn resolution(self) -> (u16, u16) {
+        if self.is_pal() {
+            (320, 240)
+        } else {
+            (320, 224)
+        }
+    }
+}
+
+const VERSION_REG: *mut u8 = (0xa10001) as _;
+
+/// Read the console version information.
+pub fn version() -> Version {
+    let v = unsafe { read_volatile(VERSION_REG) };
+    Version(v)
 }
