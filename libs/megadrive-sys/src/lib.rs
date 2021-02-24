@@ -6,6 +6,7 @@ pub mod z80;
 pub mod vdp;
 pub mod ports;
 pub mod fm;
+pub mod psg;
 
 extern "C" {
     static _data_src: *const u32;
