@@ -2,8 +2,12 @@ use core::ptr::{write_volatile, read_volatile};
 
 const FM_BASE: *mut u8 = 0xa04000 as _;
 const FM_LFO: u8 = 0x22;
+const FM_TIMER_A_HI: u8 = 0x24;
+const FM_TIMER_A_LO: u8 = 0x25;
+const FM_TIMER_B: u8 = 0x25;
 const FM_TIMER_CTRL: u8 = 0x27;
 const FM_KEY_ON: u8 = 0x28;
+const FM_DAC_DATA: u8 = 0x2a;
 const FM_DAC_ENABLE: u8 = 0x2b;
 const FM_MULTIPLY: u8 = 0x30;
 const FM_TOTAL_LEVEL: u8 = 0x40;
@@ -16,6 +20,9 @@ const FM_FREQUENCY_LO: u8 = 0xa0;
 const FM_FREQUENCY_HI: u8 = 0xa4;
 const FM_ALGORITHM: u8 = 0xb0;
 const FM_PANNING: u8 = 0xb4;
+
+static FM_SPECIAL_FREQUENCY_LO: [u8; 4] = [0xa9, 0xaa, 0xa8, 0xa2];
+static FM_SPECIAL_FREQUENCY_HI: [u8; 4] = [0xad, 0xae, 0xac, 0xa6];
 
 static ALL_CHANNELS: [u8; 6] = [0, 1, 2, 4, 5, 6];
 const NUM_CHANNELS: u8 = 6;
@@ -52,9 +59,86 @@ pub enum Note {
     B = 1214,
 }
 
-impl Into<u16> for Note {
-    fn into(self) -> u16 {
-        self as u16
+impl From<Note> for u16 {
+    fn from(v: Note) -> Self {
+        v as u16
+    }
+}
+
+/// Frequency enumeration for the Low-Frequency Oscillator.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum LFORate {
+    F3_82Hz = 0b000,
+    F5_33Hz = 0b001,
+    F5_77Hz = 0b010,
+    F6_11Hz = 0b011,
+    F6_60Hz = 0b100,
+    F9_23Hz = 0b101,
+    F46_11Hz = 0b110,
+    F69_22Hz = 0b111,
+}
+
+impl From<LFORate> for u8 {
+    fn from(v: LFORate) -> Self {
+        v as u8
+    }
+}
+
+/// A struct for formatting the timer config used by the FM chip.
+#[derive(Clone, Copy, Debug)]
+pub struct TimerConfig(u8);
+
+impl TimerConfig {
+    /// Create a new timer config with CH3 in normal mode and both timers disabled.
+    pub fn new() -> TimerConfig {
+        TimerConfig(0)
+    }
+
+    /// Configure channel 3 'special mode'.
+    pub fn ch3_special_mode(self, v: bool) -> TimerConfig {
+        let f = if v { 0x40 } else { 0 };
+        TimerConfig((self.0 & 0x3f) | f)
+    }
+
+    /// Enable or disable timer A.
+    ///
+    /// If `e` is set, the timer is enabled and will count.
+    /// If `r` is set, the timer will set the completed flag when it wraps.
+    pub fn enable_timer_a(self, e: bool, r: bool) -> TimerConfig {
+        let fe = if e { 4 } else { 0 };
+        let fr = if r { 1 } else { 0 };
+        TimerConfig((self.0 & 0xfa) | fe | fr)
+    }
+
+    /// Enable or disable timer B.
+    ///
+    /// If `e` is set, the timer is enabled and will count.
+    /// If `r` is set, the timer will set the completed flag when it wraps.
+    pub fn enable_timer_b(self, e: bool, r: bool) -> TimerConfig {
+        let fe = if e { 8 } else { 0 };
+        let fr = if r { 2 } else { 0 };
+        TimerConfig((self.0 & 0xf5) | fe | fr)
+    }
+
+    /// Reset timer A.
+    pub fn reset_timer_a(self, v: bool) -> TimerConfig {
+        let v = if v {
+            self.0 | 0x10
+        } else {
+            self.0 &! 0x10
+        };
+        TimerConfig(v)
+    }
+
+    /// Reset timer B.
+    pub fn reset_timer_b(self, v: bool) -> TimerConfig {
+        let v = if v {
+            self.0 | 0x20
+        } else {
+            self.0 &! 0x20
+        };
+        TimerConfig(v)
     }
 }
 
@@ -74,9 +158,8 @@ impl FM {
         fm.enable_lfo(None);
 
         // Disable special mode channel 3.
-        fm.write_reg(FM_TIMER_CTRL, 0);
-        // Disable DAC.
-        fm.write_reg(FM_DAC_ENABLE, 0);
+        fm.configure_timers(TimerConfig::new());
+        fm.enable_dac(false);
 
         for ch in fm.channels() {
             ch.set_panning(Panning::None, 0, 0);
@@ -96,7 +179,7 @@ impl FM {
             let base = FM_BASE.offset(reg_offset);
 
             // Busy spin until idle.
-            while (read_volatile(base) & 0x80) != 0 {}
+            while (read_volatile(FM_BASE) & 0x80) != 0 {}
 
             write_volatile(base, addr);
             write_volatile(base.offset(1), value);
@@ -112,9 +195,51 @@ impl FM {
     /// This enables and sets the frequency of the low-frequency-oscillator.
     /// This is not enough to employ it - the LFO needs to be abled per
     /// operator.
-    pub fn enable_lfo(&self, rate: Option<u8>) {
-        let v = rate.map_or(0, |v| 8 | (v & 7));
+    pub fn enable_lfo(&self, rate: Option<LFORate>) {
+        let v = rate.map_or(0, |v| 8 | (u8::from(v) & 7));
         self.write_reg(FM_LFO, v);
+    }
+
+    /// Enables or disables the DAc, which replaces channel 6.
+    pub fn enable_dac(&self, enabled: bool) {
+        let v = if enabled { 0x80 } else { 0 };
+        self.write_reg(FM_DAC_ENABLE, v);
+    }
+
+    /// Write a single sample to the DAC.
+    pub fn dac_write(&self, v: u8) {
+        self.write_reg(FM_DAC_DATA, v);
+    }
+
+    /// Configure the frequency of timer A.
+    ///
+    /// The interval is calculated as `(1024 - f) * 18 us`.
+    pub fn set_timer_a(&self, f: u16) {
+        let hi = (f >> 2) as u8;
+        let lo = (f & 3) as u8;
+
+        self.write_reg(FM_TIMER_A_HI, hi);
+        self.write_reg(FM_TIMER_A_LO, lo);
+    }
+
+    /// Configure the frequency of timer B.
+    ///
+    /// The interval is calculated as `(256 - f) * 288 us`.
+    pub fn set_timer_b(&self, f: u8) {
+        self.write_reg(FM_TIMER_B, f);
+    }
+
+    /// Configure the timers.
+    pub fn configure_timers(&self, c: TimerConfig) {
+        self.write_reg(FM_TIMER_CTRL, c.0)
+    }
+
+    /// Check whether the timers have completed.
+    pub fn timer_status(&self) -> (bool, bool) {
+        let v = unsafe { read_volatile(FM_BASE) };
+        let a = (v & 1) != 0;
+        let b = (v & 2) != 0;
+        (a, b)
     }
 
     /// Fetch a single FM channel.
@@ -266,6 +391,17 @@ impl Operator {
     pub fn set_release_rate(&self, release_rate: u8, sustain_level: u8) {
         let v = (release_rate & 0xf) | ((sustain_level & 0xf) << 4);
         self.write_reg(FM_RELEASE_RATE, v);
+    }
+
+    /// Set the frequency for a single operator.
+    ///
+    /// This is only valid for channel 3 in 'special' mode.
+    pub fn set_frequency_special(&self, frequency: impl Into<u16>, octave: u8) {
+        let frequency = frequency.into();
+        let lo = frequency as u8;
+        let hi = (((frequency >> 8) as u8) & 7) | ((octave & 7) << 3);
+        self.0.write_reg(FM_SPECIAL_FREQUENCY_HI[self.2 as usize], hi);
+        self.0.write_reg(FM_SPECIAL_FREQUENCY_LO[self.2 as usize], lo);
     }
 
     /// Set the proprietary field.
