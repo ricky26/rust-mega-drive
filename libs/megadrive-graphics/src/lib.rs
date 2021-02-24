@@ -28,7 +28,7 @@ impl Renderer {
     // HACK: At the moment, inlining this causes issues.
     /// Render the sprite buffer to the screen.
     #[inline(never)]
-    pub fn render(&mut self, vdp: &VDP) {
+    pub fn render(&mut self, vdp: &mut VDP) {
         let num_sprites = self.num_sprites as usize;
         let sprites = &mut self.sprites[..num_sprites];
 

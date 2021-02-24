@@ -52,7 +52,7 @@ fn setup_piano(ch: &Channel) {
     ch.set_frequency(Note::F, 5);
 }
 
-fn upload_graphics(vdp: &VDP) {
+fn upload_graphics(vdp: &mut VDP) {
     // Load graphics.
     static TILE_DATA: [u8; 32 * 12] = [
         // H - 8
@@ -171,10 +171,10 @@ fn upload_graphics(vdp: &VDP) {
 pub fn main() -> ! {
     let version = megadrive_sys::version();
     let fm = FM::new();
-    let vdp = VDP::new();
+    let mut vdp = VDP::new();
     let mut controllers = Controllers::new();
 
-    upload_graphics(&vdp);
+    upload_graphics(&mut vdp);
     let mut renderer = Renderer::new();
 
     let paddle_hit = fm.channel(0);
@@ -213,6 +213,9 @@ pub fn main() -> ! {
             *y = by;
         }
     };
+
+    vdp.enable_interrupts(false, true, false);
+    vdp.enable_display(true);
 
     let mut frame = 0u16;
     loop {
@@ -327,7 +330,7 @@ pub fn main() -> ! {
         }
 
         frame = (frame + 1) & 0x7fff;
-        renderer.render(&vdp);
+        renderer.render(&mut vdp);
 
         // vsync
         wait_for_vblank();

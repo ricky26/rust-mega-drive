@@ -6,8 +6,6 @@ const REG_VDP_DATA16: *mut u16 = REG_VDP_BASE as _;
 const REG_VDP_CONTROL16: *mut u16 = (REG_VDP_BASE + 4) as _;
 const REG_VDP_CONTROL32: *mut u32 = (REG_VDP_BASE + 4) as _;
 
-const SPRITE_TABLE_OFFSET: u32 = 0xf000;
-
 const DEFAULT_PALETTE: [u16; 16] = [
     0x000, 0xFFF, 0xF00, 0x0F0, 0x00B, 0xFF0, 0xF0F, 0x0FF,
     0x666, 0xBBB, 0x800, 0x080, 0x008, 0x880, 0x808, 0x088,
@@ -41,6 +39,10 @@ pub mod registers {
     pub const VRAM_SIZE: usize = 65536;
     pub const CRAM_SIZE: usize = 128;
     pub const VSRAM_SIZE: usize = 80;
+}
+
+fn flag_32(v: u32, b: bool) -> u32 {
+    if b { v } else { 0 }
 }
 
 enum AddrKind {
@@ -85,6 +87,40 @@ impl SpriteSize {
 const SPRITE_FLAG_PRIORITY: u16 = 0x8000;
 const SPRITE_FLAG_FLIP_H: u16 = 0x800;
 const SPRITE_FLAG_FLIP_V: u16 = 0x1000;
+
+/// This enumeration is for configuring how vertical scrolling works.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum VScrollMode {
+    FullScroll = 0,
+    DoubleCellScroll = 1,
+}
+
+/// This enumeration is for configuring how horizontal scrolling works.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum HScrollMode {
+    FullScroll = 0b00,
+    CellScroll = 0b10,
+    LineScroll = 0b11,
+}
+
+/// The interlacing rendering mode.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum InterlaceMode {
+    None = 0b00,
+    Interlace = 0b01,
+    DoubleRes = 0b11,
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug)]
+pub enum ScrollSize {
+    Cell32 = 0b00,
+    Cell64 = 0b01,
+    Cell128 = 0b11,
+}
 
 /// A representation of the hardware sprites supported by the Mega Drive VDP.
 #[repr(C)]
@@ -188,65 +224,79 @@ impl Default for Sprite {
     }
 }
 
-pub struct VDP;
+pub struct VDP {
+    mode: u32,
+    sprites_base: u16,
+    plane_a_base: u16,
+    plane_b_base: u16,
+    scroll_h_base: u16,
+    window_base: u16,
+}
 
 impl VDP {
     /// Initialise and return the VDP.
     pub fn new() -> VDP {
-        let vdp = VDP;
+        let mut vdp = VDP {
+            mode: 0x81000404,
+            sprites_base: 0xf000,
+            plane_a_base: 0xc00,
+            plane_b_base: 0xe00,
+            scroll_h_base: 0xf40,
+            window_base: 0xd00,
+        };
         vdp.init();
         vdp
     }
 
-    fn init(&self) {
+    fn init(&mut self) {
+        self.read_state();
+
+        // Initialise mode.
+        self.modify_mode(!0, self.mode);
+
+        self.set_register(registers::PLANE_A, ((self.plane_a_base >> 6) & 0x38) as u8);
+        self.set_register(registers::PLANE_B, (self.plane_b_base >> 9) as u8);
+        self.set_register(registers::SPRITE, (self.sprites_base >> 9) as u8);
+        self.set_register(registers::WINDOW, ((self.window_base >> 6) & 0x38) as u8);
+        self.set_register(registers::HSCROLL, (self.scroll_h_base >> 6) as u8);
+
+        self.set_register(registers::SIZE, 1);
+        self.set_register(registers::WINX, 0);
+        self.set_register(registers::WINY, 0);
+        self.set_register(registers::INCR, 2);
+        self.set_register(registers::BG_COLOUR, 0);
+        self.set_h_interrupt_interval(0xff);
+
+        // Wipe RAM. This should not be strictly necessary since we should
+        // write it as we use it and does have a slight performance penalty.
         unsafe {
-            read_volatile(REG_VDP_CONTROL16);
-
-            // Initialise mode.
-            self.set_register(registers::MODE_1, 0x04);
-            self.set_register(registers::MODE_2, 0x64);
-            self.set_register(registers::MODE_3, 0x00);
-            self.set_register(registers::MODE_4, 0x81);
-
-            self.set_register(registers::PLANE_A, 0x30);
-            self.set_register(registers::PLANE_B, 0x07);
-            self.set_register(registers::SPRITE, (SPRITE_TABLE_OFFSET >> 9) as u8);
-            self.set_register(registers::WINDOW, 0x34);
-            self.set_register(registers::HSCROLL, 0x3d);
-
-            self.set_register(registers::SIZE, 1);
-            self.set_register(registers::WINX, 0);
-            self.set_register(registers::WINY, 0);
-            self.set_register(registers::INCR, 2);
-            self.set_register(registers::BG_COLOUR, 0);
-            self.set_register(registers::HBLANK_RATE, 0xFF);
-
-            // Wipe RAM. This should not be strictly necessary since we should
-            // write it as we use it and does have a slight performance penalty.
             self.set_addr(AddrKind::VRAM, 0);
-            for _ in 0..registers::VRAM_SIZE/2 {
+            for _ in 0..registers::VRAM_SIZE / 2 {
                 write_volatile(REG_VDP_DATA16, 0);
             }
             self.set_addr(AddrKind::VSRAM, 0);
-            for _ in 0..registers::VSRAM_SIZE/2 {
+            for _ in 0..registers::VSRAM_SIZE / 2 {
                 write_volatile(REG_VDP_DATA16, 0);
             }
             self.set_addr(AddrKind::CRAM, 0);
-            for _ in 0..registers::CRAM_SIZE/2 {
+            for _ in 0..registers::CRAM_SIZE / 2 {
                 write_volatile(REG_VDP_DATA16, 0);
             }
+        }
 
-            // Default the palette
-            self.set_palette(0, &DEFAULT_PALETTE);
+        // Default the palette
+        self.set_palette(0, &DEFAULT_PALETTE);
+    }
+
+    fn read_state(&self) -> u16 {
+        unsafe {
+            read_volatile(REG_VDP_CONTROL16)
         }
     }
 
-    /// Directly set a VDP register.
-    ///
-    /// This can interfere with the display state.
-    pub unsafe fn set_register(&self, reg: u8, value: u8) {
+    fn set_register(&self, reg: u8, value: u8) {
         let v = ((reg as u16) << 8) | (value as u16);
-        write_volatile(REG_VDP_CONTROL16, v);
+        unsafe { write_volatile(REG_VDP_CONTROL16, v) };
     }
 
     fn set_addr(&self, kind: AddrKind, ptr: u32) {
@@ -260,8 +310,88 @@ impl VDP {
         unsafe { write_volatile(REG_VDP_CONTROL32, value) };
     }
 
+    fn modify_mode(&mut self, mask: u32, set: u32) {
+        self.mode = (self.mode &! mask) | (set & mask);
+
+        if mask & 0xff != 0 {
+            self.set_register(registers::MODE_1, self.mode as u8);
+        }
+
+        if mask & 0xff00 != 0 {
+            self.set_register(registers::MODE_2, (self.mode >> 8) as u8);
+        }
+
+        if mask & 0xff0000 != 0 {
+            self.set_register(registers::MODE_3, (self.mode >> 16) as u8);
+        }
+
+        if mask & 0xff000000 != 0 {
+            self.set_register(registers::MODE_4, (self.mode >> 24) as u8);
+        }
+    }
+
+    /// Enable the display.
+    ///
+    /// Without this set, the entire screen shows the background colour.
+    pub fn enable_display(&mut self, enable: bool) {
+        self.modify_mode(0x4000, flag_32(0x4000, enable));
+    }
+
+    /// Enable the horizontal blanking interrupt.
+    ///
+    /// The IRQ level on the CPU still needs to be set accordingly to allow the
+    /// interrupt to happen.
+    ///
+    /// `h` triggers an interrupt for every horizontal line drawn.
+    /// `v` triggers an interrupt at the start of the vblank period.
+    /// `x` triggers an interrupt on the external interrupt.
+    pub fn enable_interrupts(&mut self, h: bool, v: bool, x: bool) {
+        self.modify_mode(0x82010,
+                         flag_32(0x10, h) |
+                             flag_32(0x2000, v) |
+                             flag_32(0x80000, x));
+    }
+
+    /// Stop the HV counter.
+    pub fn stop_hv_counter(&mut self, stopped: bool) {
+        self.modify_mode(2, flag_32(2, stopped));
+    }
+
+    /// Enable the increased resolution 30-cell mode.
+    ///
+    /// Vertical 30-cell mode is only available on PAL systems.
+    pub fn enable_30_cell_mode(&mut self, h: bool, v: bool) {
+        self.modify_mode(0x81000800,
+            flag_32(0x800, v) | flag_32(0x81000000, h));
+    }
+
+    /// Enable DMA transfer.
+    pub fn enable_dma(&mut self, enabled: bool) {
+        self.modify_mode(0x1000, flag_32(0x1000, enabled));
+    }
+
+    /// Configure scrolling mode.
+    pub fn set_scroll_mode(&mut self, h: HScrollMode, v: VScrollMode) {
+        self.modify_mode(0x30000, ((h as u32) << 16) | ((v as u32) << 18));
+    }
+
+    /// Enable shadow / highlight mode.
+    pub fn enable_shadow_mode(&mut self, enable: bool) {
+        self.modify_mode(0x8000000, flag_32(0x8000000, enable));
+    }
+
+    /// Configure interlaced output.
+    pub fn set_interlace(&mut self, mode: InterlaceMode) {
+        self.modify_mode(0x6000000, (mode as u32) << 25);
+    }
+
+    /// Configure how frequently the H-blank interrupt fires.
+    pub fn set_h_interrupt_interval(&mut self, interval: u8) {
+        self.set_register(registers::HBLANK_RATE, interval);
+    }
+
     /// Set one of the 4 configurable palettes.
-    pub fn set_palette(&self, index: usize, palette: &[u16; 16]) {
+    pub fn set_palette(&mut self, index: usize, palette: &[u16; 16]) {
         assert!(index < 4, "only 4 palettes");
         self.set_addr(AddrKind::CRAM, (index as u32) << 5);
 
@@ -273,7 +403,7 @@ impl VDP {
     }
 
     /// Set the contents of some tiles in VRAM.
-    pub fn set_tiles<T>(&self, start_index: usize, tiles: impl Iterator<Item=T>)
+    pub fn set_tiles<T>(&mut self, start_index: usize, tiles: impl Iterator<Item=T>)
         where T: Deref<Target=Tile>
     {
         self.set_addr(AddrKind::VRAM, (start_index as u32) << 5);
@@ -289,10 +419,10 @@ impl VDP {
     }
 
     /// Set the contents of some sprites in the sprite table.
-    pub fn set_sprites<T>(&self, first_index: usize, sprites: impl Iterator<Item=T>)
+    pub fn set_sprites<T>(&mut self, first_index: usize, sprites: impl Iterator<Item=T>)
         where T: Deref<Target=Sprite>
     {
-        self.set_addr(AddrKind::VRAM, ((first_index as u32) << 3) + 0xf000);
+        self.set_addr(AddrKind::VRAM, ((first_index as u32) << 3) + (self.sprites_base as u32));
 
         for sprite in sprites {
             unsafe {
