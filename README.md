@@ -1,14 +1,15 @@
 # Mega Drive toolkit for Rust
 
-This repository hosts a few packages for use with the SEGA Mega Drive.
+This repository hosts a few packages for use with the SEGA Mega Drive (Sega
+Genesis in North America).
 
 ## Using these packages
 At the moment, these packages only work with a fork of LLVM & Rust. To use them
 you will need to build both.
 
 ### Building LLVM
-1. Checkout the `llvm-12` branch from
-[LLVM project fork](https://github.com/ricky26/M680x0-mono-repo).
+1. Checkout the `llvm-12` branch from the
+[LLVM project fork](https://github.com/ricky26/llvm-project).
   
 2. Build the toolchain with cmake:
     1. Generate the project with the M68k backend enabled:
