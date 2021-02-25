@@ -100,7 +100,7 @@ _vblank:
 .global _start
 .global main
 _start:
-  move.l #_heap_end, sp
+  move.l #_stack_top, sp
   move.w #0x2500, sr
   jsr _init_runtime
   bra #main

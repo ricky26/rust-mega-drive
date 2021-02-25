@@ -6,6 +6,9 @@ MEMORY
 
 SECTIONS
 {
+    _stack_top = 0x1000000;
+    _stack_bottom = _stack_top - 0x500;
+
     .text :
     {
         *(.text .text.*);
@@ -36,5 +39,5 @@ SECTIONS
     } > RAM AT > ROM
 
     _heap_start = .;
-    _heap_end = 0x1000000;
+    _heap_end = _stack_bottom;
 }

@@ -14,6 +14,8 @@ extern "C" {
     static _data_end: *mut u32;
     static _bss_start: *mut u32;
     static _bss_end: *mut u32;
+    static _heap_start: *mut u8;
+    static _heap_end: *mut u8;
 }
 
 #[no_mangle]
@@ -44,6 +46,14 @@ fn _init_runtime() {
             *b = 0;
         }
     }
+}
+
+/// Fetch the area of RAM not used by either the stack or statically allocated data.
+///
+/// This can be used to allocate dynamic memory.
+pub unsafe fn heap() -> &'static mut [u8] {
+    let len = _heap_end.offset_from(_heap_start) as usize;
+    core::slice::from_raw_parts_mut(_heap_start, len)
 }
 
 /// An enum for the various region variants of the Mega Drive.
