@@ -44,6 +44,10 @@ fn flag_32(v: u32, b: bool) -> u32 {
     if b { v } else { 0 }
 }
 
+fn dma_len<T>(s: &[T]) -> u16 {
+    ((s.len() * core::mem::size_of::<T>()) >> 1) as u16
+}
+
 /// A struct representing the various segments of VRAM available on the VDP.
 #[derive(Clone, Copy)]
 pub enum AddrKind {
@@ -285,6 +289,7 @@ pub struct VDP {
     plane_b_base: u16,
     scroll_h_base: u16,
     window_base: u16,
+    increment: u8,
 }
 
 impl VDP {
@@ -293,10 +298,11 @@ impl VDP {
         let mut vdp = VDP {
             mode: 0x81000404,
             sprites_base: 0xf000,
-            plane_a_base: 0xc00,
-            plane_b_base: 0xe00,
-            scroll_h_base: 0xf40,
-            window_base: 0xd00,
+            plane_a_base: 0xc000,
+            plane_b_base: 0xe000,
+            scroll_h_base: 0xf400,
+            window_base: 0xd000,
+            increment: 0,
         };
         vdp.init();
         vdp
@@ -350,7 +356,10 @@ impl VDP {
     /// This can be used to configure how many bytes are written per
     /// data write.
     pub fn set_increment(&mut self, incr: u8) {
-        self.set_register(registers::INCR, incr);
+        if incr != self.increment {
+            self.increment = incr;
+            self.set_register(registers::INCR, incr);
+        }
     }
 
     /// Write data to VRAM at the current write address.
@@ -418,6 +427,11 @@ impl VDP {
             length -= this_block;
         }
         self.enable_dma(false);
+    }
+
+    fn dma_upload_word_slice<T>(&mut self, kind: AddrKind, dst_addr: u16, src: &[T]) {
+        self.set_increment(2);
+        self.dma_upload(kind, dst_addr, src.as_ptr() as _, dma_len(src));
     }
 
     /// Fill VRAM memory with the given byte.
@@ -571,7 +585,7 @@ impl VDP {
     /// This should ideally be set before the display is enabled if it is to be changed.
     pub fn set_plane_a_address(&mut self, address: u16) {
         self.plane_a_base = address;
-        self.set_register(registers::PLANE_A, ((self.plane_a_base >> 6) & 0x38) as u8);
+        self.set_register(registers::PLANE_A, ((self.plane_a_base >> 10) & 0x38) as u8);
     }
 
     /// Configure the address for the plane B tile map.
@@ -579,7 +593,7 @@ impl VDP {
     /// This should ideally be set before the display is enabled if it is to be changed.
     pub fn set_plane_b_address(&mut self, address: u16) {
         self.plane_b_base = address;
-        self.set_register(registers::PLANE_B, (self.plane_b_base >> 9) as u8);
+        self.set_register(registers::PLANE_B, (self.plane_b_base >> 13) as u8);
     }
 
     /// Set the base address for the sprite table.
@@ -591,13 +605,13 @@ impl VDP {
     /// Set the base address for the window plane.
     pub fn set_window_base(&mut self, address: u16) {
         self.window_base = address;
-        self.set_register(registers::WINDOW, ((self.window_base >> 6) & 0x38) as u8);
+        self.set_register(registers::WINDOW, ((self.window_base >> 10) & 0x38) as u8);
     }
 
     /// Set the base address for the scrolling matrix.
     pub fn set_scroll_base(&mut self, address: u16) {
         self.scroll_h_base = address;
-        self.set_register(registers::HSCROLL, (self.scroll_h_base >> 6) as u8);
+        self.set_register(registers::HSCROLL, (self.scroll_h_base >> 10) as u8);
     }
 
     /// Configure where the window is drawn instead of plane A.
@@ -612,22 +626,16 @@ impl VDP {
     }
 
     /// Set one of the 4 configurable palettes.
-    pub fn set_palette(&mut self, index: usize, palette: &[u16; 16]) {
+    pub fn set_palette(&mut self, index: u16, palette: &[u16; 16]) {
         assert!(index < 4, "only 4 palettes");
-
-        let src = palette.as_ptr() as *const ();
-        let len = (palette.len() * core::mem::size_of::<u16>()) as u16;
-        self.dma_upload(AddrKind::CRAM,
-                        (index as u16) << 5,
-                        src,
-                        len);
+        self.dma_upload_word_slice(AddrKind::CRAM, index << 5, palette);
     }
 
     /// Set the contents of some tiles in VRAM.
-    pub fn set_tiles_iter<T>(&mut self, start_index: usize, tiles: impl Iterator<Item=T>)
+    pub fn set_tiles_iter<T>(&mut self, start_index: u16, tiles: impl Iterator<Item=T>)
         where T: Deref<Target=Tile>
     {
-        self.set_address(AddrKind::VRAM, (start_index as u16) << 5);
+        self.set_address(AddrKind::VRAM, start_index << 5);
 
         for tile in tiles {
             unsafe {
@@ -643,21 +651,17 @@ impl VDP {
     ///
     /// This can be faster than `set_tiles()` but is slightly more restricted:
     ///   it has to take a slice.
-    pub fn set_tiles(&mut self, start_index: usize, tiles: &[Tile]) {
-        let src = tiles.as_ptr() as *const ();
-        let len = (tiles.len() * core::mem::size_of::<Tile>()) as u16;
-        self.dma_upload(AddrKind::VRAM,
-                        (start_index as u16) << 5,
-                        src,
-                        len);
+    pub fn set_tiles(&mut self, start_index: u16, tiles: &[Tile]) {
+        self.dma_upload_word_slice(AddrKind::VRAM,
+                                   start_index << 5, tiles);
     }
 
     /// Set the contents of some sprites in the sprite table.
-    pub fn set_sprites_iter<T>(&mut self, first_index: usize, sprites: impl Iterator<Item=T>)
+    pub fn set_sprites_iter<T>(&mut self, first_index: u16, sprites: impl Iterator<Item=T>)
         where T: Deref<Target=Sprite>
     {
         self.set_address(AddrKind::VRAM,
-                          ((first_index as u16) << 3) + self.sprites_base);
+                         (first_index << 3) + self.sprites_base);
 
         for sprite in sprites {
             unsafe {
@@ -673,62 +677,45 @@ impl VDP {
     ///
     /// This can be faster than `set_sprites()` but is slightly more restricted:
     ///   it has to take a slice.
-    pub fn set_sprites(&mut self, first_index: usize, sprites: &[Sprite]) {
-        let src = sprites.as_ptr() as *const ();
-        let len = (sprites.len() * core::mem::size_of::<Sprite>()) as u16;
-        self.dma_upload(AddrKind::VRAM,
-                        ((first_index as u16) << 3) + self.sprites_base,
-                        src,
-                        len);
+    pub fn set_sprites(&mut self, first_index: u16, sprites: &[Sprite]) {
+        self.dma_upload_word_slice(AddrKind::VRAM,
+                                   (first_index << 3) + self.sprites_base,
+                                   sprites);
     }
 
     /// Set the horizontal scroll for planes A and B.
-    pub fn set_h_scroll(&mut self, first_index: usize, values: &[u16]) {
-        let src = values.as_ptr() as *const ();
-        let len = (values.len() * core::mem::size_of::<u16>()) as u16;
-        self.dma_upload(AddrKind::VRAM,
-                        ((first_index as u16) << 1) + self.scroll_h_base,
-                        src,
-                        len);
+    pub fn set_h_scroll(&mut self, first_index: u16, values: &[i16]) {
+        self.dma_upload_word_slice(AddrKind::VRAM,
+                                   (first_index << 1) + self.scroll_h_base,
+                                   values);
     }
 
     /// Set the vertical scroll for planes A and B.
-    pub fn set_v_scroll(&mut self, first_index: usize, values: &[u16]) {
-        let src = values.as_ptr() as *const ();
-        let len = (values.len() * core::mem::size_of::<u16>()) as u16;
-        self.dma_upload(AddrKind::VSRAM,
-                        (first_index as u16) << 1,
-                        src,
-                        len);
+    pub fn set_v_scroll(&mut self, first_index: u16, values: &[i16]) {
+        self.dma_upload_word_slice(AddrKind::VSRAM,
+                                   (first_index as u16) << 1,
+                                   values);
     }
 
     /// Set the tile flags for plane A.
-    pub fn set_plane_a_flags(&mut self, first_index: usize, values: &[TileFlags]) {
-        let src = values.as_ptr() as *const ();
-        let len = (values.len() * core::mem::size_of::<TileFlags>()) as u16;
-        self.dma_upload(AddrKind::VRAM,
-                        ((first_index as u16) << 1) + self.plane_a_base,
-                        src,
-                        len);
+    #[inline(never)]
+    pub fn set_plane_a_tiles(&mut self, first_index: u16, values: &[TileFlags]) {
+        self.dma_upload_word_slice(AddrKind::VRAM,
+                                   (first_index << 1) + self.plane_a_base,
+                                   values);
     }
 
     /// Set the tile flags for plane B.
-    pub fn set_plane_b_flags(&mut self, first_index: usize, values: &[TileFlags]) {
-        let src = values.as_ptr() as *const ();
-        let len = (values.len() * core::mem::size_of::<TileFlags>()) as u16;
-        self.dma_upload(AddrKind::VRAM,
-                        ((first_index as u16) << 1) + self.plane_b_base,
-                        src,
-                        len);
+    pub fn set_plane_b_tiles(&mut self, first_index: u16, values: &[TileFlags]) {
+        self.dma_upload_word_slice(AddrKind::VRAM,
+                                   (first_index << 1) + self.plane_b_base,
+                                   values);
     }
 
     /// Set the tile flags for the window plane.
-    pub fn set_window_flags(&mut self, first_index: usize, values: &[TileFlags]) {
-        let src = values.as_ptr() as *const ();
-        let len = (values.len() * core::mem::size_of::<TileFlags>()) as u16;
-        self.dma_upload(AddrKind::VRAM,
-                        ((first_index as u16) << 1) + self.window_base,
-                        src,
-                        len);
+    pub fn set_window_tiles(&mut self, first_index: u16, values: &[TileFlags]) {
+        self.dma_upload_word_slice(AddrKind::VRAM,
+                        (first_index << 1) + self.window_base,
+                        values);
     }
 }
