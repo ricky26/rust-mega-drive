@@ -25,9 +25,7 @@ impl Renderer {
         self.num_sprites = 0;
     }
 
-    // HACK: At the moment, inlining this causes issues.
     /// Render the sprite buffer to the screen.
-    #[inline(never)]
     pub fn render(&mut self, vdp: &mut VDP) {
         let num_sprites = self.num_sprites as usize;
         let sprites = &mut self.sprites[..num_sprites];
@@ -41,11 +39,10 @@ impl Renderer {
             s.link = next;
         }
 
-        vdp.set_sprites(0, sprites.iter());
+        vdp.set_sprites(0, sprites);
     }
 
     /// Add a sprite to the draw queue.
-    #[inline(never)]
     pub fn draw_sprite(&mut self, s: Sprite) {
         let idx = self.num_sprites as usize;
         self.num_sprites += 1;

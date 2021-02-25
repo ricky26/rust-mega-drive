@@ -87,24 +87,6 @@ impl Version {
             (true, true) => Region::Invalid,
         }
     }
-
-    /// Fetch the framerate of this console.
-    pub fn framerate(self) -> u8 {
-        if self.is_pal() {
-            50
-        } else {
-            60
-        }
-    }
-
-    /// Fetch the operating resolution of this console.
-    pub fn resolution(self) -> (u16, u16) {
-        if self.is_pal() {
-            (320, 240)
-        } else {
-            (320, 224)
-        }
-    }
 }
 
 const VERSION_REG: *mut u8 = (0xa10001) as _;
