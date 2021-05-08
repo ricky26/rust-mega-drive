@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: build llvm-m68k
         run: |
-          apt install -y ninja
+          sudo apt install -y ninja
           git clone -b llvm-12 --single-branch https://github.com/ricky26/llvm-project llvm-m68k
           cd llvm-m68k
           mkdir build
