@@ -23,7 +23,7 @@ RUN cmake \
     -S /llvm-project/llvm \
     -G Ninja \
     "-DLLVM_USE_LINKER=lld" \
-    "-DCMAKE_BUILD_TYPE=RelWithDebInfo" \
+    "-DCMAKE_BUILD_TYPE=Release" \
     "-DLLVM_ENABLE_ASSERTIONS=ON" \
     "-DLLVM_PARALLEL_LINK_JOBS=1" \
     "-DLLVM_TARGETS_TO_BUILD=X86" \
