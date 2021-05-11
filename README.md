@@ -14,10 +14,10 @@ you will need to build both.
 2. Build the toolchain with cmake:
     1. Generate the project with the M68k backend enabled:
        ```bash
-       cd M68x0-mono-repo
+       cd llvm-project
        mkdir build
        cd build
-       cmake -G Ninja "-DLLVM_USE_LINKER=lld" "-DCMAKE_BUILD_TYPE=RelWithDebInfo" "-DLLVM_ENABLE_ASSERTIONS=ON" "-DLLVM_PARALLEL_LINK_JOBS=1" "-DLLVM_TARGETS_TO_BUILD=X86" "-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=M68k" "-DLLVM_ENABLE_PROJECTS=clang;lld" ..
+       cmake -G Ninja "-DLLVM_USE_LINKER=lld" "-DCMAKE_BUILD_TYPE=Release" "-DLLVM_ENABLE_ASSERTIONS=ON" "-DLLVM_PARALLEL_LINK_JOBS=1" "-DLLVM_TARGETS_TO_BUILD=X86" "-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=M68k" "-DLLVM_ENABLE_PROJECTS=clang;lld" ..
        ```
     2. Build:
        ```
