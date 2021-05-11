@@ -17,7 +17,7 @@ RUN git clone -b llvm-12 --progress --single-branch https://github.com/ricky26/l
 
 # Lowering the number of jobs may help you solve out of memory crashes
 # Increasing the number of jobs will save you time :)
-ARG NUM_JOBS=5
+ARG NUM_JOBS=6
 WORKDIR /llvm-m68k
 RUN cmake \
     -S /llvm-project/llvm \
@@ -30,8 +30,7 @@ RUN cmake \
     "-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=M68k" \
     "-DLLVM_ENABLE_PROJECTS=clang;lld" \
     /llvm-m68k \
-    && cmake --build . --parallel ${NUM_JOBS} \
-    && cmake --build . --target install \
+    && cmake --build . --parallel ${NUM_JOBS} --target install \
     && rm -rf /llvm-project
 
 WORKDIR /rust-m68k
