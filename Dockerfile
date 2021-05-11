@@ -13,7 +13,7 @@ RUN apt-get update \
         lld \
         ninja-build
 
-RUN git clone -b llvm-12 --single-branch https://github.com/ricky26/llvm-project /llvm-project
+RUN git clone -b llvm-12 --progress --single-branch https://github.com/ricky26/llvm-project /llvm-project
 
 # Lowering the number of jobs may help you solve out of memory crashes
 # Increasing the number of jobs will save you time :)
