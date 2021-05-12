@@ -22,7 +22,7 @@ RUN git clone -b llvm-12 --progress --single-branch https://github.com/ricky26/l
 # Increasing the number of jobs will save you time :)
 ARG NUM_JOBS=6
 WORKDIR /llvm-m68k
-RUN cmake \
+RUN cmake /llvm-m68k \
     -S /llvm-project/llvm \
     -G Ninja \
     "-DLLVM_USE_LINKER=lld" \
@@ -32,7 +32,6 @@ RUN cmake \
     "-DLLVM_TARGETS_TO_BUILD=X86" \
     "-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=M68k" \
     "-DLLVM_ENABLE_PROJECTS=clang;lld" \
-    /llvm-m68k \
     && cmake --build . --parallel ${NUM_JOBS} --target install \
     && rm -rf /llvm-project
 
@@ -49,4 +48,20 @@ RUN python3 x.py build --stage=2 rustc cargo
 # Bind m68k rust toolchain using rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh
 RUN chmod +x rustup.sh && ./rustup.sh -y
-RUN $HOME/.cargo/bin/rustup toolchain link m68k "build/x86_64-unknown-linux-gnu/stage2"
+RUN $HOME/.cargo/bin/rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
+
+# Build the rust-mega-drive crate
+COPY . /rust-mega-drive
+WORKDIR /rust-mega-drive
+ENV MEGADRIVE_HOME=/rust-mega-drive
+ENV RUSTUP_TOOLCHAIN=m68k
+ENV LLVM_CONFIG=/llvm-m68k/bin/llvm-config
+RUN $HOME/.cargo/bin/cargo build --release
+
+# Install the megadrive cargo command
+WORKDIR /rust-mega-drive/tools/cargo-megadrive
+RUN cargo install --path=.
+
+# Build megapong
+WORKDIR /rust-mega-drive/examples/megapong
+RUN cargo megadrive build
