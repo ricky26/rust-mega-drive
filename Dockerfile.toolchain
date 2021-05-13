@@ -1,4 +1,5 @@
 FROM ubuntu:20.04 AS llvm-builder
+MAINTAINER rickytaylor26@gmail.com
 MAINTAINER rein@vantveer.me
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -48,20 +49,5 @@ RUN python3 x.py build --stage=2 rustc cargo
 # Bind m68k rust toolchain using rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh
 RUN chmod +x rustup.sh && ./rustup.sh -y
-RUN $HOME/.cargo/bin/rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
-
-# Build the rust-mega-drive crate
-COPY . /rust-mega-drive
-WORKDIR /rust-mega-drive
-ENV MEGADRIVE_HOME=/rust-mega-drive
-ENV RUSTUP_TOOLCHAIN=m68k
-ENV LLVM_CONFIG=/llvm-m68k/bin/llvm-config
-RUN $HOME/.cargo/bin/cargo build --release
-
-# Install the megadrive cargo command
-WORKDIR /rust-mega-drive/tools/cargo-megadrive
-RUN $HOME/.cargo/bin/cargo install --path=.
-
-# Build megapong
-WORKDIR /rust-mega-drive/examples/megapong
-RUN $HOME/.cargo/bin/cargo megadrive build
+ENV PATH=$PATH:$HOME/.cargo/bin
+RUN rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
