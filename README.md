@@ -7,7 +7,17 @@ Genesis in North America).
 At the moment, these packages only work with a fork of LLVM & Rust. To use them
 you will need to build both.
 
+### Building with Docker
+For convenience, this repository provides a two-stage Dockerized approach to building the contained code:
+- A [Dockerfile.toolchain](Dockerfile.toolchain) for a Motorola 68000-compatible Rust compiler. You can build this using
+  the command `docker build -t rust-m68k:latest -f Dockerfile.toolchain .`. If the build runs out of memory, you can
+  tweak the number of parallel build processes using `--build-arg NUM_JOBS=4` or lower if your system requires it.
+- A [Dockerfile](Dockerfile) to compile the megapong application. Use `docker build -t rust-mega-drive .` to compile it.
+  It assumes that you built the toolchain Docker image as `rust-m68k:latest`.
+
 ### Building LLVM
+This is a more in-depth approach to building a Motorola 68000 compatible Rust/LLVM toolchain. You can skip these 
+instructions if you used Docker as the main build tool
 1. Checkout the `llvm-12` branch from the
 [LLVM project fork](https://github.com/ricky26/llvm-project).
   
