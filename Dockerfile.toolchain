@@ -50,6 +50,7 @@ RUN grep "target = \[${TARGETS}\]" config.toml
 RUN sed -i 's|#llvm-config = "../path/to/llvm/root/bin/llvm-config"|llvm-config = "/llvm-m68k/bin/llvm-config"|g' config.toml
 RUN grep 'llvm-config = "/llvm-m68k/bin/llvm-config"' config.toml
 
+# Compile rustc and cargo
 RUN python3 x.py build --stage=2 rustc cargo
 
 # Bind m68k rust toolchain using rustup
