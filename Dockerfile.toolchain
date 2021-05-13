@@ -53,8 +53,16 @@ RUN grep 'llvm-config = "/llvm-m68k/bin/llvm-config"' config.toml
 # Compile rustc and cargo
 RUN python3 x.py build --stage=2 rustc cargo
 
+# Install rustup to link a "m68k" toolchain to the custom-built rustc compiler
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- \
+        -y \
+        --profile minimal \
+        --default-toolchain none
+# Add path to m68k-built cargo and rustc
+ENV PATH=$PATH:/rust-m68k/build/x86_64-unknown-linux-gnu/stage2/bin
+ENV PATH=$PATH:/rust-m68k/build/x86_64-unknown-linux-gnu/stage2-tools/x86_64-unknown-linux-gnu/release
 # Bind m68k rust toolchain using rustup
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh
-RUN chmod +x rustup.sh && ./rustup.sh -y
-ENV PATH=$PATH:/root/.cargo/bin
-RUN rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
+RUN $HOME/.cargo/bin/rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
+# Debug: show list of supported architecture targets
+RUN rustc --print target-list | grep m68k
