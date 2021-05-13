@@ -49,5 +49,5 @@ RUN python3 x.py build --stage=2 rustc cargo
 # Bind m68k rust toolchain using rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup.sh
 RUN chmod +x rustup.sh && ./rustup.sh -y
-ENV PATH=$PATH:$HOME/.cargo/bin
+ENV PATH=$PATH:/root/.cargo/bin
 RUN rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
