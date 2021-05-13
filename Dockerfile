@@ -1,4 +1,6 @@
 FROM rust-m68k:latest
+MAINTAINER rickytaylor26@gmail.com
+MAINTAINER rein@vantveer.me
 
 # Build the rust-mega-drive crate
 COPY . /rust-mega-drive
@@ -12,6 +14,6 @@ RUN cargo build --release
 WORKDIR /rust-mega-drive/tools/cargo-megadrive
 RUN cargo install --path=.
 
-# Build megapong
+# Build megapong as default command
 WORKDIR /rust-mega-drive/examples/megapong
-RUN cargo megadrive build
+CMD ["cargo", "megadrive", "--verbose", "build"]
