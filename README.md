@@ -13,7 +13,14 @@ For convenience, this repository provides a two-stage Dockerized approach to bui
   the command `docker build -t rust-m68k:latest -f Dockerfile.toolchain .`. If the build runs out of memory, you can
   tweak the number of parallel build processes using `--build-arg NUM_JOBS=4` or lower if your system requires it.
 - A [Dockerfile](Dockerfile) to compile the megapong application. Use `docker build -t rust-mega-drive .` to compile it.
-  It assumes that you built the toolchain Docker image as `rust-m68k:latest`.
+  It assumes that you built the toolchain Docker image as `rust-m68k:latest`. To obtain the "megapong" example, run:
+  ```shell
+  # Run the image with default command to build megapong
+  docker run -it -v $(pwd)/target:/rust-mega-drive/target rust-mega-drive:latest
+  # Take back control over the target directory
+  sudo chown -R $USER:$USER target 
+  ```
+  Now, you will have a `megapong.md` binary in the subfolder `target/m68k-none-eabi/release/`!
 
 ### Building LLVM
 This is a more in-depth approach to building a Motorola 68000 compatible Rust/LLVM toolchain. You can skip these 
@@ -57,7 +64,7 @@ instructions if you used Docker as the main build tool.
 ### Building this repository
 1. Set the required environment variables:
     ```
-    export MEGADRIVE_HOME=path/to/repo
+    export MEGADRIVE_HOME=path/to/rust-mega-drive/share
     export RUSTUP_TOOLCHAIN=m68k
     export LLVM_CONFIG=path=/to/llvm/build/bin/llvm-config
     ```
