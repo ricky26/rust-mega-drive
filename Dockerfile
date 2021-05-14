@@ -5,7 +5,7 @@ MAINTAINER rein@vantveer.me
 # Build the rust-mega-drive crate
 COPY . /rust-mega-drive
 WORKDIR /rust-mega-drive
-ENV MEGADRIVE_HOME=/rust-mega-drive
+ENV MEGADRIVE_HOME=/rust-mega-drive/share
 ENV RUSTUP_TOOLCHAIN=m68k
 ENV LLVM_CONFIG=/llvm-m68k/bin/llvm-config
 RUN cargo build --release
