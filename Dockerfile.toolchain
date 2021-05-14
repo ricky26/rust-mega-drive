@@ -1,0 +1,68 @@
+FROM ubuntu:20.04 AS llvm-builder
+MAINTAINER rickytaylor26@gmail.com
+MAINTAINER rein@vantveer.me
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        build-essential \
+        cmake \
+        python3 \
+        lld \
+        ninja-build \
+        pkg-config \
+        libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone -b llvm-12 --progress --single-branch https://github.com/ricky26/llvm-project /llvm-project
+
+# Lowering the number of jobs may help you solve out of memory crashes
+# Increasing the number of jobs will save you time :)
+ARG NUM_JOBS=6
+WORKDIR /llvm-m68k
+RUN cmake /llvm-m68k \
+    -S /llvm-project/llvm \
+    -G Ninja \
+    "-DLLVM_USE_LINKER=lld" \
+    "-DCMAKE_BUILD_TYPE=Release" \
+    "-DLLVM_ENABLE_ASSERTIONS=ON" \
+    "-DLLVM_PARALLEL_LINK_JOBS=1" \
+    "-DLLVM_TARGETS_TO_BUILD=X86" \
+    "-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=M68k" \
+    "-DLLVM_ENABLE_PROJECTS=clang;lld" \
+    && cmake --build . --parallel ${NUM_JOBS} --target install \
+    && rm -rf /llvm-project
+
+WORKDIR /rust-m68k
+RUN git clone -b m68k-linux --single-branch https://github.com/ricky26/rust.git /rust-m68k
+RUN cp config.toml.example config.toml
+
+# Create a m68k-unknown-linux-gnu target
+ARG TARGETS='"x86_64-unknown-linux-gnu", "m68k-unknown-linux-gnu", "m68k-none-eabi"'
+RUN sed -i "s|#target = \[\"x86_64-unknown-linux-gnu\"\]|target = \[${TARGETS}\]|g" config.toml
+# Validate that the target was set
+RUN grep "target = \[${TARGETS}\]" config.toml
+
+# Set the llvm-config path to the custom-built m68k llvm
+RUN sed -i 's|#llvm-config = "../path/to/llvm/root/bin/llvm-config"|llvm-config = "/llvm-m68k/bin/llvm-config"|g' config.toml
+RUN grep 'llvm-config = "/llvm-m68k/bin/llvm-config"' config.toml
+
+# Compile rustc and cargo
+RUN python3 x.py build --stage=2 rustc cargo
+
+# Install rustup to link a "m68k" toolchain to the custom-built rustc compiler
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- \
+        -y \
+        --profile minimal \
+        --default-toolchain none
+# Add path to m68k-built cargo and rustc
+ENV PATH=$PATH:/rust-m68k/build/x86_64-unknown-linux-gnu/stage2/bin
+ENV PATH=$PATH:/rust-m68k/build/x86_64-unknown-linux-gnu/stage2-tools/x86_64-unknown-linux-gnu/release
+# Bind m68k rust toolchain using rustup
+RUN $HOME/.cargo/bin/rustup toolchain link m68k "/rust-m68k/build/x86_64-unknown-linux-gnu/stage2"
+# Debug: show list of supported architecture targets
+RUN rustc --print target-list | grep m68k
