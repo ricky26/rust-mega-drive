@@ -2,8 +2,10 @@ FROM rust-m68k:latest
 MAINTAINER rickytaylor26@gmail.com
 MAINTAINER rein@vantveer.me
 
-# Build the rust-mega-drive crate
+# Copy over all files
 COPY . /rust-mega-drive
+
+# Build the rust-mega-drive crate
 WORKDIR /rust-mega-drive
 ENV MEGADRIVE_HOME=/rust-mega-drive/share
 ENV RUSTUP_TOOLCHAIN=m68k
@@ -16,4 +18,10 @@ RUN cargo install --path=.
 
 # Build megapong as default command
 WORKDIR /rust-mega-drive/examples/megapong
-CMD ["cargo", "megadrive", "--verbose", "build"]
+RUN cargo megadrive --verbose build
+
+WORKDIR /rust-mega-drive/examples/megatowerdefense
+RUN cargo megadrive --verbose build
+
+# For now: copy at runtime the compiled target files to a /target dir that can be mounted using docker run -v
+CMD ["cp", "-r", "/rust-mega-drive/target", "/target"]
