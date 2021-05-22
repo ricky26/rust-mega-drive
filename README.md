@@ -66,7 +66,7 @@ instructions if you used Docker as the main build tool.
     ```
     export MEGADRIVE_HOME=path/to/rust-mega-drive/share
     export RUSTUP_TOOLCHAIN=m68k
-    export LLVM_CONFIG=path=/to/llvm/build/bin/llvm-config
+    export LLVM_CONFIG=path/to/llvm/build/bin/llvm-config
     ```
 2. Build the tools & libraries:
     ```
