@@ -41,7 +41,7 @@ RUN git clone -b m68k-linux --single-branch https://github.com/ricky26/rust.git 
 RUN cp config.toml.example config.toml
 
 # Create a m68k-unknown-linux-gnu target
-ARG TARGETS='"x86_64-unknown-linux-gnu", "m68k-unknown-linux-gnu", "m68k-none-eabi"'
+ARG TARGETS='"x86_64-unknown-linux-gnu", "m68k-unknown-linux-gnu"'
 RUN sed -i "s|#target = \[\"x86_64-unknown-linux-gnu\"\]|target = \[${TARGETS}\]|g" config.toml
 # Validate that the target was set
 RUN grep "target = \[${TARGETS}\]" config.toml
