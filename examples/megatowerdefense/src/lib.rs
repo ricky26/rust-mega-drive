@@ -5,7 +5,6 @@ use core::ptr::{read_volatile, write_volatile};
 
 use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
-use rand::RngCore;
 
 use megadrive_input::Controllers;
 use megadrive_graphics::Renderer;
@@ -26,7 +25,7 @@ pub fn main() -> ! {
         controllers.update();
 
         let mut small_rng = SmallRng::seed_from_u64(42);
-        let _random_number = small_rng.next_u32();
+        let _random_number: u8 = small_rng.gen_range(0..10);
     }
 }
 
@@ -42,4 +41,10 @@ fn wait_for_vblank() {
 #[no_mangle]
 fn vblank() {
     unsafe { write_volatile(&mut NEW_FRAME, 1) };
+}
+
+#[panic_handler]
+#[no_mangle]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {}
 }
