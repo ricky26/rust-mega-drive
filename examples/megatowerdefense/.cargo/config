@@ -4,5 +4,5 @@
 [target.m68k-unknown-linux-gnu]
 rustflags = ["-C", "target-feature=+m"]
 
-[target.m68k-none-eabi]
-rustflags = ["-C", "target-feature=+m"]
+[build]
+target = "m68k-unknown-linux-gnu"
