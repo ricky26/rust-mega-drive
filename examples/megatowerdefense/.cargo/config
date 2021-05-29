@@ -1,8 +1,0 @@
-# Configure the rust compiler to allow multiplication on the m68k
-# This should fix any "ld.lld: error: undefined symbol: __mulsi3" errors
-
-[target.m68k-unknown-linux-gnu]
-rustflags = ["-C", "target-feature=+m"]
-
-[build]
-target = "m68k-unknown-linux-gnu"
