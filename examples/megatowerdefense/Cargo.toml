@@ -11,7 +11,6 @@ license = "MIT"
 crate-type = ["staticlib"]
 
 [dependencies]
-rand = { version = "0.8.3", features = ["small_rng"], default-features = false }
 megadrive-sys = { path = "../../libs/megadrive-sys" }
 megadrive-input = { path = "../../libs/megadrive-input" }
 megadrive-graphics = { path = "../../libs/megadrive-graphics" }
