@@ -16,7 +16,7 @@ For convenience, this repository provides a two-stage Dockerized approach to bui
   It assumes that you built the toolchain Docker image as `rust-m68k:latest`. To obtain the "megapong" example, run:
   ```shell
   # Run the image with default command to build megapong
-  docker run -it -v $(pwd)/target:/rust-mega-drive/target rust-mega-drive:latest
+  docker run -it -v $(pwd)/target:/target rust-mega-drive:latest
   # Take back control over the target directory
   sudo chown -R $USER:$USER target 
   ```
