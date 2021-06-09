@@ -68,15 +68,35 @@ fn upload_graphics(vdp: &mut VDP) {
 pub fn main() -> ! {
     let mut renderer = Renderer::new();
     let mut controllers = Controllers::new();
+    let mut vdp = VDP::new();
     let mut rng = PseudoRng::from_seed(42);
+    upload_graphics(&mut vdp);
+
+    let resolution = vdp.resolution();
+    let half_screen_width = (resolution.0 >> 1) as i16;
+    let half_screen_height = (resolution.1 >> 1) as i16;
+
+    vdp.enable_interrupts(false, true, false);
+    vdp.enable_display(true);
 
     loop {
         renderer.clear();
         controllers.update();
 
         unsafe {
-            let _random_number = rng.random();
+            let random_number = rng.random();
+
+            let tile_id = random_number % 2; // Modulo 2, so either 0 or 1
+            let mut sprite = Sprite::with_flags(
+                TileFlags::for_tile(tile_id, 0),
+                SpriteSize::Size1x1);
+            sprite.y = half_screen_height as u16;
+            sprite.x = half_screen_width as u16;
+            renderer.draw_sprite(sprite);
         }
+
+        // vsync
+        wait_for_vblank();
     }
 }
 
