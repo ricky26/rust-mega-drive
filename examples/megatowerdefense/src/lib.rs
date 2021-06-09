@@ -14,7 +14,6 @@ extern "C" {
 }
 
 struct PseudoRng {
-    seed: u16,
     current_rand:  u16,
 }
 
@@ -22,7 +21,6 @@ impl PseudoRng {
     // Thank you Stephane Dallongeville!
     pub fn from_seed(seed: u16) -> PseudoRng {
         PseudoRng {
-            seed,
             current_rand: seed ^ 0xD94B // XOR with some val to avoid 0
         }
     }
