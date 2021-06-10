@@ -27,17 +27,18 @@ impl PseudoRng {
     }
 
     pub unsafe fn random(&mut self) -> u16 {
-        self.current_rand = self.current_rand >> 1;
+        // https://github.com/Stephane-D/SGDK/blob/908926201af8b48227be4dbc8fbb0d5a18ac971b/src/tools.c#L36
         let hv_counter = read_volatile(&GFX_HVCOUNTER_PORT) as u16;
-        self.current_rand = self.current_rand ^ hv_counter;
-        self.current_rand << 1
+        self.current_rand ^= (self.current_rand >> 1) ^ hv_counter;
+        self.current_rand ^= self.current_rand << 1;
+        self.current_rand
     }
 }
 
 fn upload_graphics(vdp: &mut VDP) {
     // Load graphics.
     static TILE_DATA: &'static [Tile] = &[
-        // H - 8
+        // 0
         [
             0x08, 0x00, 0x08, 0x00,
             0x08, 0x00, 0x08, 0x00,
@@ -93,10 +94,12 @@ pub fn main() -> ! {
         unsafe {
             let random_number = rng.random();
 
-            let tile_id = random_number % 2; // Modulo 2, so either 0 or 1
+            let coin_flip = random_number & 1; // mask with 1, so either 0 or 1
+
             let mut sprite = Sprite::with_flags(
-                TileFlags::for_tile(tile_id, 0), //not working: test with id 1
+                TileFlags::for_tile(coin_flip + 1, 0), //not working: test with id 1
                 SpriteSize::Size1x1);
+
             sprite.x = x_off as u16;
             sprite.y = y_off as u16;
             renderer.draw_sprite(sprite);
