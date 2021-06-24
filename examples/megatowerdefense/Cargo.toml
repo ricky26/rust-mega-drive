@@ -11,6 +11,8 @@ license = "MIT"
 crate-type = ["staticlib"]
 
 [dependencies]
+lock_api = "=0.4.3"  # Pin to this version for it to work with Rust 1.53-dev
+linked_list_allocator = { version = "0.9", default-features = false, features = ["use_spin_nightly"] }
 megadrive-sys = { path = "../../libs/megadrive-sys" }
 megadrive-input = { path = "../../libs/megadrive-input" }
 megadrive-graphics = { path = "../../libs/megadrive-graphics" }
