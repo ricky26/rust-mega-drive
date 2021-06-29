@@ -1,23 +1,31 @@
 #![no_std]
-#![feature(alloc_error_handler)]
-
-extern crate alloc;
+#![feature(default_alloc_error_handler)]
+#![feature(allocator_api)]
+#![feature(const_mut_refs)]
 
 use core::panic::PanicInfo;
 use core::ptr::{read_volatile, write_volatile};
-use core::sync::atomic::AtomicUsize;
 
-use linked_list_allocator::LockedHeap;
-
-use megadrive_input::Controllers;
 use megadrive_graphics::Renderer;
-use megadrive_sys::vdp::{VDP, Sprite, SpriteSize, TileFlags, Tile};
+use megadrive_input::Controllers;
+use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
+
+pub mod hole;
+pub mod heap;
+
+use crate::heap::Heap;
 
 static mut NEW_FRAME: u16     = 0;
 const GFX_HVCOUNTER_PORT: u32 = 0xC00008;
 
+const HEAP_TOP: usize = 0xFFFFFF;
+// 16k of heap
+const HEAP_SIZE: usize = 16 * 1024;
+const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
+
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Heap = unsafe { Heap::new(HEAP_BOTTOM, HEAP_SIZE) };
+
 // use alloc::vec::Vec;
 
 extern "C" {
@@ -79,16 +87,6 @@ fn upload_graphics(vdp: &mut VDP) {
 
 #[no_mangle]
 pub fn main() -> ! {
-    const HEAP_TOP: usize = 0xFFFFFF;
-    // // 16k of heap
-    const HEAP_SIZE: usize = 0x4000;
-    const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
-    // let mut heap = unsafe { Heap::new(HEAP_BOTTON, HEAP_SIZE) };
-    // let layout = Layout::from_size_align(size_of::<usize>() * 2, align_of::<usize>()).unwrap();
-    // let _addr = heap.allocate_first_fit(layout);
-    unsafe {
-        ALLOCATOR.lock().init(HEAP_BOTTOM, HEAP_SIZE);
-    }
     let mut renderer = Renderer::new();
     let mut controllers = Controllers::new();
     let mut vdp = VDP::new();
@@ -156,7 +154,7 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-#[alloc_error_handler]
-fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
-    panic!("allocation error: {:?}", layout)
-}
+// #[alloc_error_handler]
+// fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+//     panic!("allocation error: {:?}", layout)
+// }
