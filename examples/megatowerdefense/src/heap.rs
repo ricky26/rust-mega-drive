@@ -1,6 +1,7 @@
 #![feature(const_fn)]
 #![feature(alloc, allocator_api)]
 #![no_std]
+#![feature(const_mut_refs)]
 
 // This is basically a lightly refactored version of Philipp Oppermann's
 // https://github.com/phil-opp/linked-list-allocator/blob/v0.3.0/src/lib.rs

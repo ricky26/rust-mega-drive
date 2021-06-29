@@ -2,6 +2,8 @@
 #![feature(default_alloc_error_handler)]
 #![feature(allocator_api)]
 #![feature(const_mut_refs)]
+#![feature(const_panic)]
+#![feature(const_raw_ptr_deref)]
 
 use core::panic::PanicInfo;
 use core::ptr::{read_volatile, write_volatile};
@@ -24,7 +26,7 @@ const HEAP_SIZE: usize = 16 * 1024;
 const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
 
 #[global_allocator]
-static ALLOCATOR: Heap = unsafe { Heap::new(HEAP_BOTTOM, HEAP_SIZE) };
+static mut ALLOCATOR: Heap = Heap::empty();
 
 // use alloc::vec::Vec;
 
@@ -87,6 +89,7 @@ fn upload_graphics(vdp: &mut VDP) {
 
 #[no_mangle]
 pub fn main() -> ! {
+    unsafe { ALLOCATOR.init(HEAP_BOTTOM, HEAP_SIZE) }
     let mut renderer = Renderer::new();
     let mut controllers = Controllers::new();
     let mut vdp = VDP::new();
