@@ -4,6 +4,8 @@
 
 use core::ptr::{read_volatile, write_volatile};
 
+use crate::heap::Heap;
+
 pub mod z80;
 pub mod vdp;
 pub mod ports;
@@ -52,6 +54,9 @@ fn _init_runtime() {
         }
     }
 }
+
+#[global_allocator]
+static mut ALLOCATOR: Heap = Heap::empty();
 
 /// Fetch the area of RAM not used by either the stack or statically allocated data.
 ///
