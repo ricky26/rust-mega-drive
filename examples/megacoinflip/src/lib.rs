@@ -16,9 +16,9 @@ pub mod hole;
 pub mod heap;
 
 use crate::heap::Heap;
+use megadrive_sys::rng::PseudoRng;
 
 static mut NEW_FRAME: u16     = 0;
-const GFX_HVCOUNTER_PORT: u32 = 0xC00008;
 
 const HEAP_TOP: usize = 0xFFFFFF;
 // 16k of heap
@@ -32,29 +32,6 @@ static mut ALLOCATOR: Heap = Heap::empty();
 
 extern "C" {
     fn wait_for_interrupt();
-}
-
-struct PseudoRng {
-    current_rand:  u16,
-}
-
-impl PseudoRng {
-    // Thank you Stephane Dallongeville!
-    pub fn from_seed(seed: u16) -> PseudoRng {
-        PseudoRng {
-            current_rand: seed ^ 0xD94B // XOR with some val to avoid 0
-        }
-    }
-
-    pub fn random(&mut self) -> u16 {
-        unsafe {
-            // https://github.com/Stephane-D/SGDK/blob/908926201af8b48227be4dbc8fbb0d5a18ac971b/src/tools.c#L36
-            let hv_counter = read_volatile(&GFX_HVCOUNTER_PORT) as u16;
-            self.current_rand ^= (self.current_rand >> 1) ^ hv_counter;
-            self.current_rand ^= self.current_rand << 1;
-            self.current_rand
-        }
-    }
 }
 
 fn upload_graphics(vdp: &mut VDP) {
