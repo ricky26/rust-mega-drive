@@ -20,7 +20,7 @@ RUN cargo install --path=.
 WORKDIR /rust-mega-drive/examples/megapong
 RUN cargo megadrive --verbose build
 
-WORKDIR /rust-mega-drive/examples/megatowerdefense
+WORKDIR /rust-mega-drive/examples/megacoinflip
 RUN cargo megadrive --verbose build
 
 # For now: copy at runtime the compiled target files to a /target dir that can be mounted using docker run -v
