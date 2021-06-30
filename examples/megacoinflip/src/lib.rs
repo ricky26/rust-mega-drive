@@ -17,9 +17,6 @@ const HEAP_TOP: usize = 0xFFFFFF;
 const HEAP_SIZE: usize = 16 * 1024;
 const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
 
-#[global_allocator]
-static mut ALLOCATOR: Heap = Heap::empty();
-
 extern crate alloc;
 
 extern "C" {
