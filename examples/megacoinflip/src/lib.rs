@@ -1,24 +1,16 @@
 #![no_std]
-#![feature(default_alloc_error_handler)]
-#![feature(allocator_api)]
-#![feature(const_mut_refs)]
-#![feature(const_panic)]
-#![feature(const_raw_ptr_deref)]
 
+use alloc::vec::Vec;
 use core::panic::PanicInfo;
 use core::ptr::{read_volatile, write_volatile};
 
 use megadrive_graphics::Renderer;
 use megadrive_input::Controllers;
+use megadrive_sys::heap::Heap;
+use megadrive_sys::rng::PseudoRng;
 use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
 
-pub mod hole;
-pub mod heap;
-
-use crate::heap::Heap;
-use megadrive_sys::rng::PseudoRng;
-
-static mut NEW_FRAME: u16     = 0;
+static mut NEW_FRAME: u16= 0;
 
 const HEAP_TOP: usize = 0xFFFFFF;
 // 16k of heap
@@ -29,7 +21,6 @@ const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
 static mut ALLOCATOR: Heap = Heap::empty();
 
 extern crate alloc;
-use alloc::vec::Vec;
 
 extern "C" {
     fn wait_for_interrupt();

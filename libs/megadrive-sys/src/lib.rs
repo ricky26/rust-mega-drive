@@ -1,4 +1,6 @@
 #![no_std]
+#![feature(allocator_api)]
+#![feature(const_mut_refs)]
 
 use core::ptr::{read_volatile, write_volatile};
 
@@ -8,6 +10,8 @@ pub mod ports;
 pub mod fm;
 pub mod psg;
 pub mod rng;
+pub mod hole;
+pub mod heap;
 
 extern "C" {
     static _data_src: *const u32;

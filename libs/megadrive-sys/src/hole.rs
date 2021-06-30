@@ -2,9 +2,9 @@
 // https://raw.githubusercontent.com/phil-opp/linked-list-allocator/v0.5.0/src/hole.rs
 
 use core::mem::size_of;
+use core::alloc::{Layout, AllocError};
 
 use crate::heap::{align_up};
-use core::alloc::{Layout, AllocError};
 
 /// A sorted list of holes. It uses the the holes itself to store its nodes.
 pub struct HoleList {
