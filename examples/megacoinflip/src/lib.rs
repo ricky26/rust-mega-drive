@@ -86,8 +86,9 @@ pub fn main() -> ! {
         // Admittedly, this is a rather contrived example to use Vec. But hey, it's a PoC.
         flipped.push(random_number & 1); // mask with 1, so either 0 or 1
 
+        let heads_or_tails_tile_idx = flipped.pop().unwrap() + 1;
         let mut sprite = Sprite::with_flags(
-            TileFlags::for_tile(flipped.pop().unwrap() + 1, 0), //not working: test with id 1
+            TileFlags::for_tile(heads_or_tails_tile_idx, 0),
             SpriteSize::Size1x1);
 
         sprite.x = x_off as u16;
