@@ -28,7 +28,8 @@ const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
 #[global_allocator]
 static mut ALLOCATOR: Heap = Heap::empty();
 
-// use alloc::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 extern "C" {
     fn wait_for_interrupt();
@@ -84,23 +85,18 @@ pub fn main() -> ! {
     vdp.enable_display(true);
     let mut frame = 0u16;
 
-    // let h_tiles_per_screen: usize = (resolution.0 / 4) as usize;
-    // let v_tiles_per_screen: usize = (resolution.1 / 8) as usize;
-
-    // let mut grid = Vec::new();
-    // for h_tile in 0..h_tiles_per_screen {
-    //     grid.push(16);
-    // }
+    let mut flipped = Vec::new();
 
     loop {
         renderer.clear();
         controllers.update();
 
         let random_number = rng.random();
-        let coin_flip = random_number & 1; // mask with 1, so either 0 or 1
+        // Admittedly, this is a rather contrived example to use Vec. But hey, it's a PoC.
+        flipped.push(random_number & 1); // mask with 1, so either 0 or 1
 
         let mut sprite = Sprite::with_flags(
-            TileFlags::for_tile(coin_flip + 1, 0), //not working: test with id 1
+            TileFlags::for_tile(flipped.pop().unwrap() + 1, 0), //not working: test with id 1
             SpriteSize::Size1x1);
 
         sprite.x = x_off as u16;
