@@ -6,7 +6,7 @@ members = [
     "libs/megadrive-graphics",
     "tools/cargo-megadrive",
     "examples/megapong",
-    "examples/megatowerdefense",
+    "examples/megacoinflip",
 ]
 
 [profile.release]
