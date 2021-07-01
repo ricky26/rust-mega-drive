@@ -1,12 +1,6 @@
 // This is basically a lightly refactored version of Philipp Oppermann's
 // https://github.com/phil-opp/linked-list-allocator/blob/v0.3.0/src/lib.rs
 
-extern crate alloc;
-
-#[cfg(test)]
-#[macro_use]
-extern crate std;
-
 use core::mem;
 use core::alloc::{Layout, AllocError, GlobalAlloc};
 
