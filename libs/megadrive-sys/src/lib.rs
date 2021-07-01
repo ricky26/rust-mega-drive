@@ -1,8 +1,11 @@
 #![no_std]
 #![feature(allocator_api)]
 #![feature(const_mut_refs)]
+#![feature(alloc_error_handler)]
+#![feature(default_alloc_error_handler)]
 
 use core::ptr::{read_volatile, write_volatile};
+extern crate alloc;
 
 use crate::heap::Heap;
 
@@ -128,4 +131,9 @@ fn init_tmss() {
             write_volatile(TMSS_REG, *tmss_code);
         }
     }
+}
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    panic!("allocation error: {:?}", layout)
 }

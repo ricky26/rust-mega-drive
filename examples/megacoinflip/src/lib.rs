@@ -6,9 +6,9 @@ use core::ptr::{read_volatile, write_volatile};
 
 use megadrive_graphics::Renderer;
 use megadrive_input::Controllers;
-use megadrive_sys::heap::Heap;
 use megadrive_sys::rng::PseudoRng;
 use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
+use megadrive_sys::heap::Heap;
 
 static mut NEW_FRAME: u16= 0;
 
@@ -55,6 +55,7 @@ fn upload_graphics(vdp: &mut VDP) {
 
 #[no_mangle]
 pub fn main() -> ! {
+    const ALLOCATOR: Heap = Heap::empty();
     unsafe { ALLOCATOR.init(HEAP_BOTTOM, HEAP_SIZE) }
     let mut renderer = Renderer::new();
     let mut controllers = Controllers::new();
@@ -118,8 +119,3 @@ fn vblank() {
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
-
-// #[alloc_error_handler]
-// fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
-//     panic!("allocation error: {:?}", layout)
-// }
