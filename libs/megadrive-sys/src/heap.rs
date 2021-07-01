@@ -1,8 +1,3 @@
-#![no_std]
-#![feature(const_fn)]
-#![feature(alloc, allocator_api)]
-#![feature(const_mut_refs)]
-
 // This is basically a lightly refactored version of Philipp Oppermann's
 // https://github.com/phil-opp/linked-list-allocator/blob/v0.3.0/src/lib.rs
 
@@ -14,6 +9,8 @@ extern crate std;
 
 use core::mem;
 use core::alloc::{Layout, AllocError, GlobalAlloc};
+
+use no_mutex::Mutex;
 
 use crate::hole::{Hole, HoleList};
 
@@ -132,17 +129,25 @@ pub fn align_down(addr: usize, align: usize) -> usize {
     }
 }
 
+const HEAP: Mutex<Heap> = Mutex::default();
+
+impl Default for Heap {
+    fn default() -> Self {
+        Heap::empty()
+    }
+}
 
 unsafe impl GlobalAlloc for Heap {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        self
+        HEAP.lock()
             .allocate_first_fit(layout)
             .ok()
             .map_or(0 as *mut u8, |allocation| allocation)
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        self.deallocate(ptr, layout)
+        HEAP.lock()
+            .deallocate(ptr, layout)
     }
 }
 
