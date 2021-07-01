@@ -1,4 +1,5 @@
 #![no_std]
+extern crate alloc;
 
 use alloc::vec::Vec;
 use core::panic::PanicInfo;
@@ -16,8 +17,6 @@ const HEAP_TOP: usize = 0xFFFFFF;
 // 16k of heap
 const HEAP_SIZE: usize = 16 * 1024;
 const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
-
-extern crate alloc;
 
 extern "C" {
     fn wait_for_interrupt();
