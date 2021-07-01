@@ -5,7 +5,6 @@
 #![feature(default_alloc_error_handler)]
 
 use core::ptr::{read_volatile, write_volatile};
-extern crate alloc;
 
 use crate::heap::Heap;
 
@@ -134,6 +133,6 @@ fn init_tmss() {
 }
 
 #[alloc_error_handler]
-fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+fn alloc_error_handler(layout: core::alloc::Layout) -> ! {
     panic!("allocation error: {:?}", layout)
 }
