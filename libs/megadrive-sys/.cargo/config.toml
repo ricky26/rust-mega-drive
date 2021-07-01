@@ -1,0 +1,4 @@
+# Following https://os.phil-opp.com/heap-allocation/#the-allocator-interface
+
+[unstable]
+build-std = ["core", "compiler_builtins", "alloc"]
