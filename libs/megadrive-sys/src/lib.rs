@@ -1,12 +1,6 @@
 #![no_std]
-#![feature(allocator_api)]
-#![feature(const_mut_refs)]
-#![feature(alloc_error_handler)]
-#![feature(default_alloc_error_handler)]
 
 use core::ptr::{read_volatile, write_volatile};
-
-use crate::heap::Heap;
 
 pub mod z80;
 pub mod vdp;
@@ -14,8 +8,6 @@ pub mod ports;
 pub mod fm;
 pub mod psg;
 pub mod rng;
-pub mod hole;
-pub mod heap;
 
 extern "C" {
     static _data_src: *const u32;
@@ -56,9 +48,6 @@ fn _init_runtime() {
         }
     }
 }
-
-#[global_allocator]
-static mut ALLOCATOR: Heap = Heap::empty();
 
 /// Fetch the area of RAM not used by either the stack or statically allocated data.
 ///
@@ -130,9 +119,4 @@ fn init_tmss() {
             write_volatile(TMSS_REG, *tmss_code);
         }
     }
-}
-
-#[alloc_error_handler]
-fn alloc_error_handler(layout: core::alloc::Layout) -> ! {
-    panic!("allocation error: {:?}", layout)
 }

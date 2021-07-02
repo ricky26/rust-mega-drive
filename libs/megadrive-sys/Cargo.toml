@@ -14,4 +14,3 @@ categories = ["embedded", "game-development", "hardware-support", "no-std"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-no_mutex = "0.0.1"
