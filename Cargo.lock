@@ -180,6 +180,7 @@ dependencies = [
  "megadrive-graphics",
  "megadrive-input",
  "megadrive-sys",
+ "megadrive-util",
 ]
 
 [[package]]
@@ -206,6 +207,10 @@ dependencies = [
 
 [[package]]
 name = "megadrive-sys"
+version = "0.1.0"
+
+[[package]]
+name = "megadrive-util"
 version = "0.1.0"
 
 [[package]]
