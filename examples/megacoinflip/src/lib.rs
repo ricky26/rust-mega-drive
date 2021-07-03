@@ -7,7 +7,7 @@ use core::ptr::{read_volatile, write_volatile};
 
 use megadrive_graphics::Renderer;
 use megadrive_input::Controllers;
-use megadrive_sys::rng::PseudoRng;
+use megadrive_util::rng::PseudoRng;
 use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
 use megadrive_alloc::heap::Heap;
 

@@ -15,3 +15,4 @@ megadrive-sys = { path = "../../libs/megadrive-sys" }
 megadrive-input = { path = "../../libs/megadrive-input" }
 megadrive-graphics = { path = "../../libs/megadrive-graphics" }
 megadrive-alloc = { path = "../../libs/megadrive-alloc" }
+megadrive-util = { path = "../../libs/megadrive-util" }

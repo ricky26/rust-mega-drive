@@ -5,6 +5,7 @@ members = [
     "libs/megadrive-input",
     "libs/megadrive-graphics",
     "libs/megadrive-alloc",
+    "libs/megadrive-util",
     "tools/cargo-megadrive",
     "examples/megapong",
     "examples/megacoinflip",
