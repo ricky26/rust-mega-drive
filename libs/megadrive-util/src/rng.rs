@@ -15,6 +15,10 @@ impl PseudoRng {
     }
 
     pub fn random(&mut self) -> u16 {
+        // SAFETY
+        // The read_volatile call is guaranteed ONLY on the Sega Mega Drive. The horizontal/vertical
+        // video sync counter is a "port" that is mapped directly into the system memory map. It is
+        // to my knowledge always initialized, so &GFX_HVCOUNTER_PORT can never be a null reference.
         unsafe {
             // https://github.com/Stephane-D/SGDK/blob/908926201af8b48227be4dbc8fbb0d5a18ac971b/src/tools.c#L36
             let hv_counter = read_volatile(&GFX_HVCOUNTER_PORT) as u16;
