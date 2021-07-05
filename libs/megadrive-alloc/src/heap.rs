@@ -3,8 +3,7 @@
 
 use core::mem;
 use core::alloc::{Layout, AllocError, GlobalAlloc};
-
-use no_mutex::Mutex;
+use core::cell::RefCell;
 
 use crate::hole::{Hole, HoleList};
 
@@ -123,24 +122,18 @@ pub fn align_down(addr: usize, align: usize) -> usize {
     }
 }
 
-const HEAP: Mutex<Heap> = Mutex::default();
-
-impl Default for Heap {
-    fn default() -> Self {
-        Heap::empty()
-    }
-}
+const HEAP: RefCell<Heap> = RefCell::new(Heap::empty());
 
 unsafe impl GlobalAlloc for Heap {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        HEAP.lock()
+        HEAP.borrow_mut()
             .allocate_first_fit(layout)
             .ok()
             .map_or(0 as *mut u8, |allocation| allocation)
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        HEAP.lock()
+        HEAP.borrow_mut()
             .deallocate(ptr, layout)
     }
 }
