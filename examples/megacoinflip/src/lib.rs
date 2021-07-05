@@ -9,14 +9,9 @@ use megadrive_graphics::Renderer;
 use megadrive_input::Controllers;
 use megadrive_util::rng::PseudoRng;
 use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
-use megadrive_alloc::heap::Heap;
+use megadrive_alloc::ALLOCATOR;
 
 static mut NEW_FRAME: u16= 0;
-
-const HEAP_TOP: usize = 0xFFFFFF;
-// 16k of heap
-const HEAP_SIZE: usize = 16 * 1024;
-const HEAP_BOTTOM: usize = HEAP_TOP - HEAP_SIZE;
 
 extern "C" {
     fn wait_for_interrupt();
@@ -54,8 +49,9 @@ fn upload_graphics(vdp: &mut VDP) {
 
 #[no_mangle]
 pub fn main() -> ! {
-    const ALLOCATOR: Heap = Heap::empty();
-    unsafe { ALLOCATOR.init(HEAP_BOTTOM, HEAP_SIZE) }
+    // Initialize the allocator to provide actual heap allocations
+    unsafe { ALLOCATOR.init() }
+
     let mut renderer = Renderer::new();
     let mut controllers = Controllers::new();
     let mut vdp = VDP::new();
