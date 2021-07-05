@@ -4,13 +4,13 @@
 #![feature(alloc_error_handler)]
 #![feature(default_alloc_error_handler)]
 
-pub mod heap;
-pub mod hole;
+mod heap;
+mod hole;
 
 use crate::heap::Heap;
 
 #[global_allocator]
-static mut ALLOCATOR: Heap = Heap::empty();
+pub static mut ALLOCATOR: Heap = Heap::empty();
 
 #[alloc_error_handler]
 fn alloc_error_handler(layout: core::alloc::Layout) -> ! {
