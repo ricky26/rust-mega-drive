@@ -6,6 +6,7 @@ use core::alloc::{Layout, AllocError, GlobalAlloc};
 use core::cell::RefCell;
 
 use crate::hole::{Hole, HoleList};
+use megadrive_sys::heap;
 
 /// A fixed size heap backed by a linked list of free memory blocks.
 pub struct Heap {
@@ -24,16 +25,21 @@ impl Heap {
         }
     }
 
-    /// Initializes an empty heap
-    ///
-    /// # Unsafety
-    ///
-    /// This function must be called at most once and must only be used on an
-    /// empty heap.
-    pub unsafe fn init(&mut self, heap_bottom: usize, heap_size: usize) {
-        self.bottom = heap_bottom;
-        self.size = heap_size;
-        self.holes = HoleList::new(heap_bottom, heap_size);
+    // Initializes an empty heap
+    //
+    // SAFETY:
+    // This function must be called at most once and must only be used on an
+    // empty heap.
+    pub unsafe fn init(&mut self) {
+        // Create the raw slice from the magical heap function from megadrive_sys
+        let heap_slice = heap();
+
+        // Take a raw pointer to the slice as the bottom
+        self.bottom = heap_slice.as_ptr() as usize;
+
+        // An then the size as the length of the slice
+        self.size = heap_slice.len();
+        self.holes = HoleList::new(self.bottom, self.size);
     }
 
     /// Creates a new heap with the given `bottom` and `size`. The bottom address must be valid
