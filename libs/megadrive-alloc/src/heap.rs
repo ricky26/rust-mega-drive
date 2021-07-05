@@ -42,18 +42,6 @@ impl Heap {
         self.holes = HoleList::new(self.bottom, self.size);
     }
 
-    /// Creates a new heap with the given `bottom` and `size`. The bottom address must be valid
-    /// and the memory in the `[heap_bottom, heap_bottom + heap_size)` range must not be used for
-    /// anything else. This function is unsafe because it can cause undefined behavior if the
-    /// given address is invalid.
-    pub unsafe fn new(heap_bottom: usize, heap_size: usize) -> Heap {
-        Heap {
-            bottom: heap_bottom,
-            size: heap_size,
-            holes: HoleList::new(heap_bottom, heap_size),
-        }
-    }
-
     /// Allocates a chunk of the given size with the given alignment. Returns a pointer to the
     /// beginning of that chunk if it was successful. Else it returns `None`.
     /// This function scans the list of free memory blocks and uses the first block that is big
