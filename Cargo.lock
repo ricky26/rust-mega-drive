@@ -188,7 +188,6 @@ name = "megadrive-alloc"
 version = "0.1.0"
 dependencies = [
  "megadrive-sys",
- "no_mutex",
 ]
 
 [[package]]
@@ -221,12 +220,6 @@ dependencies = [
  "megadrive-input",
  "megadrive-sys",
 ]
-
-[[package]]
-name = "no_mutex"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "736b7b84bc9554e5cc47889d5ade7681893db81fca917978d7cf867666dac5a6"
 
 [[package]]
 name = "once_cell"
