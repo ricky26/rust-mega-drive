@@ -1,6 +1,6 @@
 use core::ptr::read_volatile;
 
-const GFX_HVCOUNTER_PORT: u32 = 0xC00008;
+const GFX_HVCOUNTER_PORT: *const u16 = 0xC00008 as _;
 
 pub struct PseudoRng {
     current_rand:  u16,
@@ -18,11 +18,11 @@ impl PseudoRng {
         // SAFETY
         // The read_volatile call is guaranteed ONLY on the Sega Mega Drive. The horizontal/vertical
         // video sync counter is a "port" that is mapped directly into the system address space. It
-        // is to my knowledge always initialized, so &GFX_HVCOUNTER_PORT can never be a null
+        // is to my knowledge always initialized, so GFX_HVCOUNTER_PORT can never be a null
         // reference.
         unsafe {
             // https://github.com/Stephane-D/SGDK/blob/908926201af8b48227be4dbc8fbb0d5a18ac971b/src/tools.c#L36
-            let hv_counter = read_volatile(&GFX_HVCOUNTER_PORT) as u16;
+            let hv_counter = read_volatile(GFX_HVCOUNTER_PORT) as u16;
             self.current_rand ^= (self.current_rand >> 1) ^ hv_counter;
             self.current_rand ^= self.current_rand << 1;
             self.current_rand
