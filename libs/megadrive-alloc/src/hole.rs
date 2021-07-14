@@ -2,7 +2,7 @@
 // https://raw.githubusercontent.com/phil-opp/linked-list-allocator/v0.5.0/src/hole.rs
 
 use core::mem::size_of;
-use core::alloc::{Layout, AllocError};
+use core::alloc::Layout;
 
 use crate::heap::{align_up};
 
@@ -45,7 +45,7 @@ impl HoleList {
     /// block is returned.
     /// This function uses the “first fit” strategy, so it uses the first hole that is big
     /// enough. Thus the runtime is in O(n) but it should be reasonably fast for small allocations.
-    pub fn allocate_first_fit(&mut self, layout: Layout) -> Result<*mut u8, AllocError> {
+    pub fn allocate_first_fit(&mut self, layout: Layout) -> Result<*mut u8, ()> {
         assert!(layout.size() >= Self::min_size());
 
         allocate_first_fit(&mut self.first, layout).map(|allocation| {
@@ -185,7 +185,7 @@ fn split_hole(hole: HoleInfo, required_layout: Layout) -> Option<Allocation> {
 /// care of freeing it again.
 /// This function uses the “first fit” strategy, so it breaks as soon as a big enough hole is
 /// found (and returns it).
-fn allocate_first_fit(mut previous: &mut Hole, layout: Layout) -> Result<Allocation, AllocError> {
+fn allocate_first_fit(mut previous: &mut Hole, layout: Layout) -> Result<Allocation, ()> {
     loop {
         let allocation: Option<Allocation> = previous.next.as_mut().and_then(|current| {
             split_hole(current.info(), layout.clone())
@@ -202,7 +202,7 @@ fn allocate_first_fit(mut previous: &mut Hole, layout: Layout) -> Result<Allocat
             }
             None => {
                 // this was the last hole, so no hole is big enough -> allocation not possible
-                return Err(AllocError);
+                return Err(());
             }
         }
     }

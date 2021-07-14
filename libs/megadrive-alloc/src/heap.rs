@@ -2,7 +2,7 @@
 // https://github.com/phil-opp/linked-list-allocator/blob/v0.3.0/src/lib.rs
 
 use core::mem;
-use core::alloc::{Layout, AllocError, GlobalAlloc};
+use core::alloc::{Layout, GlobalAlloc};
 use core::cell::RefCell;
 
 use crate::hole::{Hole, HoleList};
@@ -47,7 +47,7 @@ impl Heap {
     /// This function scans the list of free memory blocks and uses the first block that is big
     /// enough. The runtime is in O(n) where n is the number of free blocks, but it should be
     /// reasonably fast for small allocations.
-    pub fn allocate_first_fit(&mut self, layout: Layout) -> Result<*mut u8, AllocError> {
+    pub fn allocate_first_fit(&mut self, layout: Layout) -> Result<*mut u8, ()> {
         let mut size = layout.size();
         if size < HoleList::min_size() {
             size = HoleList::min_size();
@@ -104,6 +104,50 @@ impl Heap {
     }
 }
 
+struct RefCellHeap {
+    heap: RefCell<Heap>
+}
+
+impl RefCellHeap {
+    const fn new() -> RefCellHeap {
+        RefCellHeap {
+            heap: RefCell::new(Heap::empty())
+        }
+    }
+}
+
+static HEAP: RefCellHeap = RefCellHeap::new();
+
+unsafe impl GlobalAlloc for Heap {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        HEAP.heap
+            .borrow_mut()
+            .allocate_first_fit(layout)
+            .ok()
+            .map_or(0 as *mut u8, |allocation| allocation)
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        HEAP.heap
+            .borrow_mut()
+            .deallocate(ptr, layout)
+    }
+}
+
+/// SAFETY:
+/// The Sync implementation block is required by the compiler in order to have a shared internally
+/// mutable Heap.
+///
+/// This is basically a dummy implementation. The heap cannot be safely used across thread
+/// boundaries as it is likely to lead to data races. So: don't use in multi-threaded apps.
+unsafe impl Sync for RefCellHeap {}
+
+/// Align upwards. Returns the smallest x with alignment `align`
+/// so that x >= addr. The alignment must be a power of 2.
+pub fn align_up(addr: usize, align: usize) -> usize {
+    align_down(addr + align - 1, align)
+}
+
 /// Align downwards. Returns the greatest x with alignment `align`
 /// so that x <= addr. The alignment must be a power of 2.
 pub fn align_down(addr: usize, align: usize) -> usize {
@@ -114,26 +158,4 @@ pub fn align_down(addr: usize, align: usize) -> usize {
     } else {
         panic!("`align` must be a power of 2");
     }
-}
-
-static HEAP: RefCell<Heap> = RefCell::new(Heap::empty());
-
-unsafe impl GlobalAlloc for Heap {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        HEAP.borrow_mut()
-            .allocate_first_fit(layout)
-            .ok()
-            .map_or(0 as *mut u8, |allocation| allocation)
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        HEAP.borrow_mut()
-            .deallocate(ptr, layout)
-    }
-}
-
-/// Align upwards. Returns the smallest x with alignment `align`
-/// so that x >= addr. The alignment must be a power of 2.
-pub fn align_up(addr: usize, align: usize) -> usize {
-    align_down(addr + align - 1, align)
 }
