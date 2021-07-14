@@ -116,7 +116,7 @@ pub fn align_down(addr: usize, align: usize) -> usize {
     }
 }
 
-const HEAP: RefCell<Heap> = RefCell::new(Heap::empty());
+static HEAP: RefCell<Heap> = RefCell::new(Heap::empty());
 
 unsafe impl GlobalAlloc for Heap {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
