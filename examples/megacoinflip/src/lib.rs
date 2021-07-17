@@ -11,7 +11,7 @@ use megadrive_util::rng::PseudoRng;
 use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
 use megadrive_alloc::ALLOCATOR;
 
-static mut NEW_FRAME: u16= 0;
+static mut NEW_FRAME: u16 = 0;
 
 extern "C" {
     fn wait_for_interrupt();
