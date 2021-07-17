@@ -211,6 +211,10 @@ version = "0.1.0"
 [[package]]
 name = "megadrive-util"
 version = "0.1.0"
+dependencies = [
+ "megadrive-graphics",
+ "megadrive-sys",
+]
 
 [[package]]
 name = "megapong"
