@@ -2,7 +2,6 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::panic::PanicInfo;
 use core::ptr::{read_volatile, write_volatile};
 
 use megadrive_graphics::Renderer;
@@ -77,9 +76,12 @@ pub fn main() -> ! {
 
         let random_number = rng.random();
         // Admittedly, this is a rather contrived example to use Vec. But hey, it's a PoC.
+        // let flipped = random_number & 1; // mask with 1, so either 0 or 1
         flipped.push(random_number & 1); // mask with 1, so either 0 or 1
 
+        // let heads_or_tails_tile_idx = flipped + 1;
         let heads_or_tails_tile_idx = flipped.pop().unwrap() + 1;
+
         let mut sprite = Sprite::with_flags(
             TileFlags::for_tile(heads_or_tails_tile_idx, 0),
             SpriteSize::Size1x1);
@@ -107,10 +109,4 @@ fn wait_for_vblank() {
 #[no_mangle]
 fn vblank() {
     unsafe { write_volatile(&mut NEW_FRAME, 1) };
-}
-
-#[panic_handler]
-#[no_mangle]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
 }
