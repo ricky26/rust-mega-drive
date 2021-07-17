@@ -23,7 +23,7 @@ def generate_image_arrays():
 
     # Write the boilerplate
     rust_file.write("use megadrive_sys::vdp::Tile;\n\n")
-    rust_file.write("static DEFAULT_FONT: &'static [Tile] = &[\n")
+    rust_file.write("pub static DEFAULT_FONT: &'static [Tile] = &[\n")
 
     font = ImageFont.load_default()
 
@@ -53,7 +53,7 @@ def write_char(char_idx, font, rust_file):
     image = image.resize((tile_width, tile_height)).convert(mode="P", palette=Image.ADAPTIVE, colors=16)
     image_hex_vals = image.tobytes().hex(bytes_per_sep=2)
 
-    rust_file.write(f'    // {char}\n')
+    rust_file.write(f'    // idx {char_idx}: {char}\n')
     # Write the start of the tile array
     rust_file.write('    [\n')
 
