@@ -1,7 +1,10 @@
 #![no_std]
 
 use core::mem::MaybeUninit;
+
 use megadrive_sys::vdp::{Sprite, VDP};
+
+pub mod default_ascii;
 
 const MAX_SPRITES: usize = 80;
 
