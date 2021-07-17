@@ -12,3 +12,6 @@ fi
 docker build -t rust-mega-drive:latest .
 docker run -it -v $(pwd)/target:/target rust-mega-drive:latest
 sudo chown -R $USER:$USER target
+flatpak run org.libretro.RetroArch \
+  --load-menu-on-error \
+  -L ~/.var/app/org.libretro.RetroArch/config/retroarch/cores/blastem_libretro.so
