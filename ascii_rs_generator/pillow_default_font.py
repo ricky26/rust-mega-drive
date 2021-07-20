@@ -1,4 +1,6 @@
+import math
 import os.path
+from typing import TextIO
 
 from PIL import Image, ImageDraw, ImageFont
 # Regarding Pillow license: the Historical Permission Notice and Disclaimer
@@ -35,10 +37,10 @@ def generate_image_arrays():
     rust_file.close()
 
 
-def write_char(char_idx, font, rust_file):
-    image = Image.new('RGB', (8, 16))
-    tile_width = 4
+def write_char(char_idx: int, font: ImageFont, rust_file: TextIO):
+    tile_width = 8
     tile_height = 8
+    image = Image.new('RGB', (tile_width, tile_height))
 
     draw = ImageDraw.Draw(image)
 
@@ -48,10 +50,8 @@ def write_char(char_idx, font, rust_file):
         char = '?'
 
     draw.text((0, 0), char, font=font)
-
-    # Convert image to 4x8 4-bit-per-pixel hex values
-    image = image.resize((tile_width, tile_height)).convert(mode="P", palette=Image.ADAPTIVE, colors=16)
-    image_hex_vals = image.tobytes().hex(bytes_per_sep=2)
+    # Convert to grayscale
+    image = image.convert(mode="L")
 
     rust_file.write(f'    // idx {char_idx}: {char}\n')
     # Write the start of the tile array
@@ -61,11 +61,17 @@ def write_char(char_idx, font, rust_file):
         # Write the indent
         rust_file.write('        ')
 
-        for column in range(tile_width):
-            # Two hex values per pixel
-            offset = row * column * 2
-            pixel = image_hex_vals[offset:offset + 2]
-            rust_file.write(f'0x{pixel}, ')
+        # Step by two: two pixels are combined into one hex value
+        for column in range(tile_width)[::2]:
+            pixel1 = image.getpixel((row, column))
+            # Scale down the palette from 256 to 8 colors. Offset by 1 since color 0 is transparent.
+            pixel1 = math.floor(pixel1 / 32) + 1
+
+            # Add the second pixel
+            pixel2 = image.getpixel((row, column + 1))
+            pixel2 = math.floor(pixel2 / 32) + 1
+
+            rust_file.write(f'0x{pixel1}{pixel2}, ')
 
         rust_file.write('\n')
     # The end of the tile array
