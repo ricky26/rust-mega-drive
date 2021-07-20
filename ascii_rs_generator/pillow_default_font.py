@@ -65,11 +65,11 @@ def write_char(char_idx: int, font: ImageFont, rust_file: TextIO):
         for column in range(tile_width)[::2]:
             pixel1 = image.getpixel((row, column))
             # Scale down the palette from 256 to 8 colors. Offset by 1 since color 0 is transparent.
-            pixel1 = math.floor(pixel1 / 32) + 1
+            pixel1 = math.floor((pixel1 + 1) / 32)
 
             # Add the second pixel
             pixel2 = image.getpixel((row, column + 1))
-            pixel2 = math.floor(pixel2 / 32) + 1
+            pixel2 = math.floor((pixel2 + 1) / 32)
 
             rust_file.write(f'0x{pixel1}{pixel2}, ')
 
