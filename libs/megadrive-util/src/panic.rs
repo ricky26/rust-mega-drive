@@ -1,7 +1,7 @@
 use core::panic::PanicInfo;
 
 use megadrive_sys::vdp::{Sprite, SpriteSize, TileFlags, VDP};
-use megadrive_graphics::default_ascii::DEFAULT_FONT;
+use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 use megadrive_graphics::Renderer;
 use core::ptr::read_volatile;
 
@@ -16,7 +16,7 @@ extern "C" {
 fn panic(_info: &PanicInfo) -> ! {
     let mut renderer = Renderer::new();
     let mut vdp = VDP::new();
-    vdp.set_tiles(0, DEFAULT_FONT);
+    vdp.set_tiles(0, DEFAULT_FONT_1X1);
 
     let resolution = vdp.resolution();
     let half_screen_width = (resolution.0 >> 1) as i16;
