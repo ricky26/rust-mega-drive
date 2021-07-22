@@ -25,7 +25,7 @@ def generate_image_arrays():
 
     # Write the boilerplate
     rust_file.write("use megadrive_sys::vdp::Tile;\n\n")
-    rust_file.write("pub static DEFAULT_FONT: &'static [Tile] = &[\n")
+    rust_file.write("pub static DEFAULT_FONT_1X1: &'static [Tile] = &[\n")
 
     font = ImageFont.load_default()
 
