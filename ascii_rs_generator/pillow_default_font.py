@@ -49,7 +49,7 @@ def write_char(char_idx: int, font: ImageFont, rust_file: TextIO):
     else:
         char = '?'
 
-    draw.text((0, 0), char, font=font)
+    draw.text(xy=(0, -2), text=char, font=font)
     # Convert to grayscale
     image = image.convert(mode="L")
 
