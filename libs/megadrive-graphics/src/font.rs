@@ -29,19 +29,21 @@ impl Font {
 
     /// Displays text on a
     pub fn blit_text(&self, renderer: &mut Renderer, text: &str, x: u16, y: u16) {
-        let mut sprite = Sprite::with_flags(
-            TileFlags::for_tile(33, 0),
-            // TileFlags::for_tile(char_as_ascii_number as u16, 0),
-            self.sprite_size);
 
-        // let x_offset = idx * (self.tile_size as usize & 0b0011 as usize) + 1;
-        sprite.x = x + (0 as u16 * 9 );
-        sprite.y = y;
+        // Iterate over the bytes in the text, it panics when getting the chars() for some reason
+        for (idx, text_byte) in text.bytes().enumerate() {
+            let char_as_num = text_byte as u16;
 
-        renderer.draw_sprite(sprite);
+            let mut sprite = Sprite::with_flags(
+                TileFlags::for_tile(char_as_num as u16, 0),
+                // TileFlags::for_tile(char_as_ascii_number as u16, 0),
+                self.sprite_size);
 
-        // for (idx, char) in text.chars().enumerate() {
-        //     // let char_as_ascii_number = char as u32;
-        // }
+            // let x_offset = idx * (self.tile_size as usize & 0b0011 as usize) + 1;
+            sprite.x = x + (idx as u16 * 9);
+            sprite.y = y;
+
+            renderer.draw_sprite(sprite);
+        }
     }
 }
