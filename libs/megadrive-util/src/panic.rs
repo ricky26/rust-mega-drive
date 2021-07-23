@@ -1,9 +1,9 @@
 use core::panic::PanicInfo;
 
 use megadrive_sys::vdp::{Sprite, SpriteSize, TileFlags, VDP};
-use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 use megadrive_graphics::Renderer;
 use core::ptr::read_volatile;
+use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 
 static mut NEW_FRAME: u16 = 0;
 
@@ -16,7 +16,7 @@ extern "C" {
 fn panic(_info: &PanicInfo) -> ! {
     let mut renderer = Renderer::new();
     let mut vdp = VDP::new();
-    vdp.set_tiles(0, DEFAULT_FONT_1X1);
+    DEFAULT_FONT_1X1.init_default();
 
     let resolution = vdp.resolution();
     let half_screen_width = (resolution.0 >> 1) as i16;
@@ -32,13 +32,7 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {
         renderer.clear();
 
-        let mut sprite = Sprite::with_flags(
-            TileFlags::for_tile(33, 0),
-            SpriteSize::Size1x1);
-        sprite.x = x_off as u16;
-        sprite.y = y_off as u16;
-        renderer.draw_sprite(sprite);
-
+        DEFAULT_FONT_1X1.blit_text(&mut renderer, "!", x_off as u16, y_off as u16);
         frame = (frame + 1) & 0x7fff;
         renderer.render(&mut vdp);
         // vsync
