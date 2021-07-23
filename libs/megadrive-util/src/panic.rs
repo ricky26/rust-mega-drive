@@ -1,8 +1,8 @@
 use core::panic::PanicInfo;
-
-use megadrive_sys::vdp::{Sprite, SpriteSize, TileFlags, VDP};
-use megadrive_graphics::Renderer;
 use core::ptr::read_volatile;
+
+use megadrive_sys::vdp::VDP;
+use megadrive_graphics::Renderer;
 use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 
 static mut NEW_FRAME: u16 = 0;
