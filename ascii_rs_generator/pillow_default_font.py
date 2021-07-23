@@ -23,9 +23,15 @@ def generate_image_arrays():
 
     rust_file = open(output_path, 'at')
 
-    # Write the boilerplate
-    rust_file.write("use megadrive_sys::vdp::Tile;\n\n")
-    rust_file.write("pub static DEFAULT_FONT_1X1: &'static [Tile] = &[\n")
+    # Write the boilerplate imports and inits
+    rust_file.write("""use megadrive_sys::vdp::Tile;
+use megadrive_sys::vdp::SpriteSize::Size1x1;
+use crate::font::Font;
+
+pub static DEFAULT_FONT_1X1: Font = Font { tile_data: TILE_DATA, tile_size: Size1x1 };
+
+pub static TILE_DATA: &'static [Tile] = &[
+""")
 
     font = ImageFont.load_default()
 
