@@ -36,8 +36,10 @@ pub fn main() -> ! {
 
         let random_number = rng.random();
         let flipped = random_number & 1; // mask with 1, so either 0 or 1
-
-        let heads_or_tails_tile_idx = flipped + 1;
+        let heads_or_tails = match flipped {
+            0 => "Heads!",
+            _ => "Tails!"
+        };
 
         DEFAULT_FONT_1X1.blit_text(&mut renderer, heads_or_tails, x_off, y_off);
 
