@@ -1,25 +1,15 @@
-FROM rust-m68k:latest
+FROM rust-mega-drive:latest
 MAINTAINER rickytaylor26@gmail.com
 MAINTAINER rein@vantveer.me
 
 # Copy over all files
 COPY . /rust-mega-drive
 
-# Build the rust-mega-drive crate
-WORKDIR /rust-mega-drive
-ENV MEGADRIVE_HOME=/rust-mega-drive/share
-ENV RUSTUP_TOOLCHAIN=m68k
-ENV LLVM_CONFIG=/llvm-m68k/bin/llvm-config
-RUN cargo build --release
-
-# Install the megadrive cargo command
-WORKDIR /rust-mega-drive/tools/cargo-megadrive
-RUN cargo install --path=.
-
-# Build megapong as default command
+# Build pong example
 WORKDIR /rust-mega-drive/examples/megapong
 RUN cargo megadrive --verbose build
 
+# Build coin flip example
 WORKDIR /rust-mega-drive/examples/megacoinflip
 RUN cargo megadrive --verbose build
 
