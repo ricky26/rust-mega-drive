@@ -10,9 +10,16 @@ static mut NEW_FRAME: u16 = 0;
 #[panic_handler]
 #[no_mangle]
 fn panic(_info: &PanicInfo) -> ! {
+    // Since we don't know where the panic occurred, we can't assume the vdp and renderer are
+    // initialized yet
     let mut renderer = Renderer::new();
     let mut vdp = VDP::new();
-    DEFAULT_FONT_1X1.init_default();
+
+    vdp.enable_interrupts(false, true, false);
+    vdp.enable_display(true);
+
+    // Initialize the default font tiles
+    DEFAULT_FONT_1X1.load(&mut vdp);
 
     let resolution = vdp.resolution();
     let half_screen_width = (resolution.0 >> 1) as i16;
@@ -20,10 +27,6 @@ fn panic(_info: &PanicInfo) -> ! {
 
     let x_off = 128 + half_screen_width;
     let y_off = 128 + half_screen_height;
-
-    vdp.enable_interrupts(false, true, false);
-    vdp.enable_display(true);
-    let mut frame = 0u16;
 
     loop {
         renderer.clear();
