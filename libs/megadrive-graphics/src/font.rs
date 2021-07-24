@@ -4,7 +4,8 @@ use crate::Renderer;
 /// Font struct, having tile data and a size definition
 pub struct Font {
     pub tile_data: &'static [Tile],
-    pub sprite_size: SpriteSize
+    pub sprite_size: SpriteSize,
+    pub start_index: u16
 }
 
 impl Font {
