@@ -1,7 +1,7 @@
 use core::panic::PanicInfo;
 use core::ptr::read_volatile;
 
-use megadrive_sys::vdp::{VDP, Sprite, TileFlags};
+use megadrive_sys::vdp::VDP;
 use megadrive_graphics::Renderer;
 use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 
