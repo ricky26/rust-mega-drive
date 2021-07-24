@@ -176,18 +176,10 @@ checksum = "18794a8ad5b29321f790b55d93dfba91e125cb1a9edbd4f8e3150acc771c1a5e"
 name = "megacoinflip"
 version = "0.1.0"
 dependencies = [
- "megadrive-alloc",
  "megadrive-graphics",
  "megadrive-input",
  "megadrive-sys",
  "megadrive-util",
-]
-
-[[package]]
-name = "megadrive-alloc"
-version = "0.1.0"
-dependencies = [
- "megadrive-sys",
 ]
 
 [[package]]
