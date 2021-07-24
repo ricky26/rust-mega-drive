@@ -31,11 +31,12 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {
         renderer.clear();
 
-        let panic_message = "!!";
+        let panic_message = "Panic!";
 
-        for (idx, _byte) in panic_message.as_bytes().into_iter().enumerate() {
+        for (idx, byte) in panic_message.as_bytes().into_iter().enumerate() {
+            let char_as_tile_idx = *byte as u16 + DEFAULT_FONT_1X1.start_index;
             let mut sprite = Sprite::with_flags(
-                TileFlags::for_tile(49 + panic_message.len() as u16, 0),
+                TileFlags::for_tile(char_as_tile_idx as u16, 0),
                 DEFAULT_FONT_1X1.sprite_size);
             sprite.x = (x_off + 9 * idx as i16) as u16;
             sprite.y = y_off as u16;
