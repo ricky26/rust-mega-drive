@@ -49,6 +49,10 @@ pub fn main() -> ! {
     }
 }
 
+extern "C" {
+    fn wait_for_interrupt();
+}
+
 fn wait_for_vblank() {
     unsafe {
         while read_volatile(&NEW_FRAME) == 0 {
