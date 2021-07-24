@@ -16,18 +16,17 @@ impl Font {
 
     /// Displays text on a
     pub fn blit_text(&self, renderer: &mut Renderer, text: &str, x: u16, y: u16) {
-
         // Iterate over the bytes in the text, it panics when getting the chars() for some reason
-        for (idx, text_byte) in text.bytes().enumerate() {
-            let char_as_num = text_byte as u16;
+        for (idx, text_byte) in text.as_bytes().into_iter().enumerate() {
+            let tile_for_char = text_byte as u16 + self.start_index;
 
             let mut sprite = Sprite::with_flags(
-                TileFlags::for_tile(char_as_num as u16, 0),
-                // TileFlags::for_tile(char_as_ascii_number as u16, 0),
+                TileFlags::for_tile(tile_for_char as u16, 0),
                 self.sprite_size);
+            sprite.set_priority(true);
 
             // let x_offset = idx * (self.tile_size as usize & 0b0011 as usize) + 1;
-            sprite.x = x + (idx as u16 * 9);
+            sprite.x = x + (idx * 9) as u16;
             sprite.y = y;
 
             renderer.draw_sprite(sprite);
