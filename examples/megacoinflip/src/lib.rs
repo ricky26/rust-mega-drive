@@ -4,7 +4,8 @@ use core::ptr::{read_volatile, write_volatile};
 use megadrive_graphics::Renderer;
 use megadrive_input::Controllers;
 use megadrive_util::rng::PseudoRng;
-use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
+use megadrive_sys::vdp::VDP;
+use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 
 static mut NEW_FRAME: u16 = 0;
 
