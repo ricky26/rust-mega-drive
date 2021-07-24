@@ -24,11 +24,12 @@ def generate_image_arrays():
     rust_file = open(output_path, 'at')
 
     # Write the boilerplate imports and inits
-    rust_file.write("""use megadrive_sys::vdp::Tile;
+    rust_file.write("""// This file was generated from the Python ascii_rs_generator script, please don't edit directly
+use megadrive_sys::vdp::Tile;
 use megadrive_sys::vdp::SpriteSize::Size1x1;
 use crate::font::Font;
 
-pub static DEFAULT_FONT_1X1: Font = Font { tile_data: TILE_DATA, tile_size: Size1x1 };
+pub static DEFAULT_FONT_1X1: Font = Font { tile_data: TILE_DATA, sprite_size: Size1x1, start_index: 1 };
 
 pub static TILE_DATA: &'static [Tile] = &[
 """)
@@ -81,7 +82,7 @@ def write_char(char_idx: int, font: ImageFont, rust_file: TextIO):
 
         rust_file.write('\n')
     # The end of the tile array
-    rust_file.write('\n    ],\n')
+    rust_file.write('    ],\n')
 
 
 if __name__ == '__main__':
