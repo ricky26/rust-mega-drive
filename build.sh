@@ -10,7 +10,7 @@ if [[ "$#" -ne 0 ]]; then
 fi
 
 docker build -t rust-mega-drive:latest .
-docker run -it -v $(pwd)/target:/target rust-mega-drive:latest
+docker run -it --rm -v $(pwd)/target:/target rust-mega-drive:latest
 sudo chown -R $USER:$USER target
 flatpak run org.libretro.RetroArch \
   --load-menu-on-error \
