@@ -9,23 +9,9 @@ pub struct Font {
 }
 
 impl Font {
-    /// Uses a minimal setup in order to initialize a new visual display and upload the font tiles
-    /// to the 0-index of the tile memory
-    pub fn init_default(&self) {
-        let mut vdp = VDP::new();
-        let start_index= 0;
-
-        vdp.enable_interrupts(false, true, false);
-        vdp.enable_display(true);
-        vdp.set_tiles(start_index, self.tile_data);
-    }
-
-    /// Initialize the font to a particular start index, using an already initialized visual
-    /// display
-    pub fn init(&self, vdp: &mut VDP, start_index: u16) {
-        vdp.enable_interrupts(false, true, false);
-        vdp.enable_display(true);
-        vdp.set_tiles(start_index, self.tile_data);
+    /// Loads the font to the start index, using an already initialized visual display
+    pub fn load(&self, vdp: &mut VDP) {
+        vdp.set_tiles(self.start_index, self.tile_data);
     }
 
     /// Displays text on a
