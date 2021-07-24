@@ -19,12 +19,14 @@ impl Font {
     pub fn blit_text(&self, renderer: &mut Renderer, text: &str, x: u16, y: u16) {
         for (idx, byte) in text.as_bytes().into_iter().enumerate() {
             let char_as_tile_idx = *byte as u16 + self.start_index;
+
             let mut sprite = Sprite::with_flags(
                 TileFlags::for_tile(char_as_tile_idx as u16, 0),
                 self.sprite_size);
             sprite.x = x + 9 * idx as u16;
             sprite.y = y as u16;
             sprite.set_priority(true);
+
             renderer.draw_sprite(sprite);
         }
     }
