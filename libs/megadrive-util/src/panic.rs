@@ -31,8 +31,12 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {
         renderer.clear();
 
-        let panic_message = "Panic2!";
-        DEFAULT_FONT_1X1.blit_text(&mut renderer, panic_message, x_off as u16, y_off as u16);
+        // This, unfortunately does not compile due to an undefined __mulsi3 in ld.ldd
+        // triggered by the downcast_ref::<&str>()
+        // let mut panic_text: &str = &_info.payload().downcast_ref::<&str>().unwrap();
+        let panic_text= "Panic!";
+
+        DEFAULT_FONT_1X1.blit_text(&mut renderer, panic_text, x_off as u16, y_off as u16);
         renderer.render(&mut vdp);
         // vsync
         wait_for_vblank();
