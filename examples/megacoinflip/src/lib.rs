@@ -1,14 +1,10 @@
 #![no_std]
-extern crate alloc;
-
-use alloc::vec::Vec;
 use core::ptr::{read_volatile, write_volatile};
 
 use megadrive_graphics::Renderer;
 use megadrive_input::Controllers;
 use megadrive_util::rng::PseudoRng;
 use megadrive_sys::vdp::{Sprite, SpriteSize, Tile, TileFlags, VDP};
-use megadrive_alloc::ALLOCATOR;
 
 static mut NEW_FRAME: u16 = 0;
 
@@ -48,9 +44,6 @@ fn upload_graphics(vdp: &mut VDP) {
 
 #[no_mangle]
 pub fn main() -> ! {
-    // Initialize the allocator to provide actual heap allocations
-    unsafe { ALLOCATOR.init() }
-
     let mut renderer = Renderer::new();
     let mut controllers = Controllers::new();
     let mut vdp = VDP::new();
@@ -66,21 +59,15 @@ pub fn main() -> ! {
 
     vdp.enable_interrupts(false, true, false);
     vdp.enable_display(true);
-    let mut frame = 0u16;
-
-    let mut flipped = Vec::new();
 
     loop {
         renderer.clear();
         controllers.update();
 
         let random_number = rng.random();
-        // Admittedly, this is a rather contrived example to use Vec. But hey, it's a PoC.
-        // let flipped = random_number & 1; // mask with 1, so either 0 or 1
-        flipped.push(random_number & 1); // mask with 1, so either 0 or 1
+        let flipped = random_number & 1; // mask with 1, so either 0 or 1
 
-        // let heads_or_tails_tile_idx = flipped + 1;
-        let heads_or_tails_tile_idx = flipped.pop().unwrap() + 1;
+        let heads_or_tails_tile_idx = flipped + 1;
 
         let mut sprite = Sprite::with_flags(
             TileFlags::for_tile(heads_or_tails_tile_idx, 0),
@@ -90,7 +77,6 @@ pub fn main() -> ! {
         sprite.y = y_off as u16;
         renderer.draw_sprite(sprite);
 
-        frame = (frame + 1) & 0x7fff;
         renderer.render(&mut vdp);
         // vsync
         wait_for_vblank();
