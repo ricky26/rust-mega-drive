@@ -14,21 +14,17 @@ impl Font {
         vdp.set_tiles(self.start_index, self.tile_data);
     }
 
-    /// Displays text on a
+    /// Displays text using renderer at position (x, y)
+    /// Note remember to call renderer.render() afterwards
     pub fn blit_text(&self, renderer: &mut Renderer, text: &str, x: u16, y: u16) {
-        // Iterate over the bytes in the text, it panics when getting the chars() for some reason
-        for (idx, text_byte) in text.as_bytes().into_iter().enumerate() {
-            let tile_for_char = text_byte as u16 + self.start_index;
-
+        for (idx, byte) in text.as_bytes().into_iter().enumerate() {
+            let char_as_tile_idx = *byte as u16 + self.start_index;
             let mut sprite = Sprite::with_flags(
-                TileFlags::for_tile(tile_for_char as u16, 0),
+                TileFlags::for_tile(char_as_tile_idx as u16, 0),
                 self.sprite_size);
+            sprite.x = x + 9 * idx as u16;
+            sprite.y = y as u16;
             sprite.set_priority(true);
-
-            // let x_offset = idx * (self.tile_size as usize & 0b0011 as usize) + 1;
-            sprite.x = x + (idx * 9) as u16;
-            sprite.y = y;
-
             renderer.draw_sprite(sprite);
         }
     }

@@ -25,26 +25,14 @@ fn panic(_info: &PanicInfo) -> ! {
     let half_screen_width = (resolution.0 >> 1) as i16;
     let half_screen_height = (resolution.1 >> 1) as i16;
 
-    let x_off = 128 + half_screen_width;
+    let x_off = 64 + half_screen_width;
     let y_off = 128 + half_screen_height;
 
     loop {
         renderer.clear();
 
-        let panic_message = "Panic!";
-
-        for (idx, byte) in panic_message.as_bytes().into_iter().enumerate() {
-            let char_as_tile_idx = *byte as u16 + DEFAULT_FONT_1X1.start_index;
-            let mut sprite = Sprite::with_flags(
-                TileFlags::for_tile(char_as_tile_idx as u16, 0),
-                DEFAULT_FONT_1X1.sprite_size);
-            sprite.x = (x_off + 9 * idx as i16) as u16;
-            sprite.y = y_off as u16;
-            sprite.set_priority(true);
-            renderer.draw_sprite(sprite);
-        }
-
-        // DEFAULT_FONT_1X1.blit_text(&mut renderer, panic_message, x_off as u16, y_off as u16);
+        let panic_message = "Panic2!";
+        DEFAULT_FONT_1X1.blit_text(&mut renderer, panic_message, x_off as u16, y_off as u16);
         renderer.render(&mut vdp);
         // vsync
         wait_for_vblank();
