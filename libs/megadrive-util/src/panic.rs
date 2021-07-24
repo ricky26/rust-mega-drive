@@ -7,10 +7,6 @@ use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 
 static mut NEW_FRAME: u16 = 0;
 
-extern "C" {
-    fn wait_for_interrupt();
-}
-
 #[panic_handler]
 #[no_mangle]
 fn panic(_info: &PanicInfo) -> ! {
@@ -38,6 +34,10 @@ fn panic(_info: &PanicInfo) -> ! {
         // vsync
         wait_for_vblank();
     }
+}
+
+extern "C" {
+    fn wait_for_interrupt();
 }
 
 fn wait_for_vblank() {
