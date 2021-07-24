@@ -1,7 +1,7 @@
 use core::panic::PanicInfo;
 use core::ptr::read_volatile;
 
-use megadrive_sys::vdp::VDP;
+use megadrive_sys::vdp::{VDP, Sprite, TileFlags};
 use megadrive_graphics::Renderer;
 use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
 
@@ -31,8 +31,19 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {
         renderer.clear();
 
-        DEFAULT_FONT_1X1.blit_text(&mut renderer, "!", x_off as u16, y_off as u16);
-        frame = (frame + 1) & 0x7fff;
+        let panic_message = "!!";
+
+        for (idx, _byte) in panic_message.as_bytes().into_iter().enumerate() {
+            let mut sprite = Sprite::with_flags(
+                TileFlags::for_tile(49 + panic_message.len() as u16, 0),
+                DEFAULT_FONT_1X1.sprite_size);
+            sprite.x = (x_off + 9 * idx as i16) as u16;
+            sprite.y = y_off as u16;
+            sprite.set_priority(true);
+            renderer.draw_sprite(sprite);
+        }
+
+        // DEFAULT_FONT_1X1.blit_text(&mut renderer, panic_message, x_off as u16, y_off as u16);
         renderer.render(&mut vdp);
         // vsync
         wait_for_vblank();
