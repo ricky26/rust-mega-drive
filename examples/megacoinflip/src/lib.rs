@@ -2,7 +2,7 @@
 use core::ptr::{read_volatile, write_volatile};
 
 use megadrive_graphics::Renderer;
-use megadrive_input::Controllers;
+use megadrive_input::{Controllers, Button};
 use megadrive_util::rng::PseudoRng;
 use megadrive_sys::vdp::VDP;
 use megadrive_graphics::default_ascii::DEFAULT_FONT_1X1;
@@ -30,18 +30,36 @@ pub fn main() -> ! {
     // Load the font tiles
     DEFAULT_FONT_1X1.load(&mut vdp);
 
+    let mut roll = false;
+
     loop {
         renderer.clear();
         controllers.update();
 
+        // Always roll: it updates the seed so that the outcome will be different every game
         let random_number = rng.random();
-        let flipped = random_number & 1; // mask with 1, so either 0 or 1
-        let heads_or_tails = match flipped {
-            0 => "Heads!",
-            _ => "Tails!"
-        };
 
-        DEFAULT_FONT_1X1.blit_text(&mut renderer, heads_or_tails, x_off, y_off);
+        // Do nothing if A button isn't pressed
+        if let Some(c) = controllers.controller_state(0) {
+            if c.down(Button::A) { roll = true; }
+        }
+
+        if roll == false {
+            let text = "Press A to flip";
+            DEFAULT_FONT_1X1.blit_text(&mut renderer, text, x_off, y_off);
+        } else {
+            // Reset for next
+            roll = false;
+
+            let flipped = random_number & 1; // mask with 1, so either 0 or 1
+            let heads_or_tails = match flipped {
+                0 => "Heads!",
+                _ => "Tails!"
+            };
+
+            DEFAULT_FONT_1X1.blit_text(&mut renderer, heads_or_tails, x_off, y_off);
+        }
+
 
         renderer.render(&mut vdp);
         // vsync
@@ -49,9 +67,7 @@ pub fn main() -> ! {
     }
 }
 
-extern "C" {
-    fn wait_for_interrupt();
-}
+extern "C" { fn wait_for_interrupt(); }
 
 fn wait_for_vblank() {
     unsafe {
