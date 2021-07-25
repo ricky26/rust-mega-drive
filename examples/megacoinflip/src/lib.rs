@@ -21,7 +21,7 @@ pub fn main() -> ! {
     let half_screen_width = resolution.0 >> 1;
     let half_screen_height = resolution.1 >> 1;
 
-    let x_off = 128 + half_screen_width;
+    let x_off = 104 + half_screen_width;
     let y_off = 128 + half_screen_height;
 
     vdp.enable_interrupts(false, true, false);
