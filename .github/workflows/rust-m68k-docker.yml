@@ -6,7 +6,7 @@ name: build-and-push-rust-llvm-m68k-docker-image
 # This Docker image only rarely, if ever, needs updating, so it can
 # only be executed manually
 on: 
-  workflow_dispatch:
+  workflow_dispatch
 
 jobs:
   docker:
