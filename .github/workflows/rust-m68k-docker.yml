@@ -26,7 +26,7 @@ jobs:
         with:
           file: Dockerfile.toolchain
           # Nightly version of Rust 1.53.0 with m68k support
-          tags: ${{ secrets.DOCKER_REPO_GROUP }}/rust-m68k:1.53.0-dev
+          tags: rust-m68k:1.53.0-dev
           push: true
           
 
