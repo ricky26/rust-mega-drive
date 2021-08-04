@@ -26,7 +26,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
-          file: Dockerfile
+          file: Dockerfile.megadrive
           # Nightly version of Rust 1.53.0 with m68k support
           tags: ${{ secrets.DOCKER_REGISTRY_PROVIDER }}/${{ github.repository_owner }}/rust-m68k-megadrive:1.53.0-dev
           push: true
