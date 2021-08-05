@@ -8,7 +8,7 @@ name: build-and-push-rust-m68k-cargo-megadrive-extension-docker-image
 # This Docker image only rarely, if ever, needs updating, so it should
 # only be executed manually
 on:
-  - push
+#  - push
   - workflow_dispatch
 
 jobs:
