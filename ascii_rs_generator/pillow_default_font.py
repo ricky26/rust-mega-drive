@@ -35,14 +35,13 @@ def generate_image_arrays():
         # Write the boilerplate imports and inits
         rust_file.write(boilerplate)
 
-    font = ImageFont.load_default()
+        font = ImageFont.load_default()
 
-    for char_idx in range(128):
-        write_char(char_idx, font, rust_file)
+        for char_idx in range(128):
+            write_char(char_idx, font, rust_file)
 
-    # Closing quote for the Tiles slice
-    rust_file.write("];\n")
-    rust_file.close()
+        # Closing quote for the Tiles slice
+        rust_file.write("];\n")
 
 
 def write_char(char_idx: int, font: ImageFont, rust_file: TextIO):
