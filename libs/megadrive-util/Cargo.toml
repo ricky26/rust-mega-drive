@@ -15,3 +15,7 @@ categories = ["embedded", "game-development", "no-std"]
 [dependencies]
 megadrive-graphics = { path = '../megadrive-graphics' }
 megadrive-sys = { path = '../megadrive-sys' }
+
+[features]
+default = ["panic_handler"]
+panic_handler = []
