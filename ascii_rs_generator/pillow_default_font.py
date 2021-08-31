@@ -13,6 +13,16 @@ from PIL import Image, ImageDraw, ImageFont
 drawable_chars = [0]
 drawable_chars.extend(list(range(32, 128)))
 
+boilerplate = """// This file was generated from the Python ascii_rs_generator script, please don't edit directly
+use megadrive_sys::vdp::Tile;
+use megadrive_sys::vdp::SpriteSize::Size1x1;
+use crate::font::Font;
+
+pub static DEFAULT_FONT_1X1: Font = Font { tile_data: TILE_DATA, sprite_size: Size1x1, start_index: 1 };
+
+pub static TILE_DATA: &'static [Tile] = &[
+"""
+
 
 def generate_image_arrays():
     output_path = 'libs/megadrive-graphics/src/default_ascii.rs'
@@ -22,17 +32,8 @@ def generate_image_arrays():
         os.remove(output_path)
 
     with open(output_path, 'at') as rust_file:
-
-    # Write the boilerplate imports and inits
-    rust_file.write("""// This file was generated from the Python ascii_rs_generator script, please don't edit directly
-use megadrive_sys::vdp::Tile;
-use megadrive_sys::vdp::SpriteSize::Size1x1;
-use crate::font::Font;
-
-pub static DEFAULT_FONT_1X1: Font = Font { tile_data: TILE_DATA, sprite_size: Size1x1, start_index: 1 };
-
-pub static TILE_DATA: &'static [Tile] = &[
-""")
+        # Write the boilerplate imports and inits
+        rust_file.write(boilerplate)
 
     font = ImageFont.load_default()
 
