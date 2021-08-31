@@ -21,7 +21,7 @@ def generate_image_arrays():
     if os.path.isfile(output_path):
         os.remove(output_path)
 
-    rust_file = open(output_path, 'at')
+    with open(output_path, 'at') as rust_file:
 
     # Write the boilerplate imports and inits
     rust_file.write("""// This file was generated from the Python ascii_rs_generator script, please don't edit directly
