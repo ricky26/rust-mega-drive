@@ -13,3 +13,6 @@ categories = ["embedded", "game-development", "no-std"]
 
 [dependencies]
 megadrive-sys = { path = "../megadrive-sys" }
+
+[build-dependencies]
+cpython = { version="0.6"}
