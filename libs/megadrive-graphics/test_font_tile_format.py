@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 
 from PIL import ImageFont
 
-from ascii_rs_generator.pillow_default_font import write_char
+from default_font import write_char
 
 
 class TestASCIIFontGenerator(unittest.TestCase):
