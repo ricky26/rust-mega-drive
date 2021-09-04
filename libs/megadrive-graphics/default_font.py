@@ -25,7 +25,7 @@ pub static TILE_DATA: &'static [Tile] = &[
 
 
 def generate_image_arrays():
-    output_path = 'libs/megadrive-graphics/src/default_ascii.rs'
+    output_path = 'src/default_ascii.rs'
 
     # Remove in order to overwrite
     if os.path.isfile(output_path):
