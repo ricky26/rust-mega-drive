@@ -9,9 +9,8 @@ from PIL import Image, ImageDraw, ImageFont
 # believe it's compatible with this project's MIT license.
 
 # chars 1-31 are SOH, STX, ... TAB, LF etc., are non-drawable. char 128 is DEL
-# chr(0) is the NUL char, so we'll just render this as a black tile
-drawable_chars = [0]
-drawable_chars.extend(list(range(32, 128)))
+# chr(0) is the NUL char, which some IDEs don't like in a .rs file 
+drawable_chars = list(range(32, 128))
 
 boilerplate = """// This file was generated from the Python ascii_rs_generator script, please don't edit directly
 use megadrive_sys::vdp::Tile;
