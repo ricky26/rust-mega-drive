@@ -4,8 +4,10 @@ members = [
     "libs/megadrive-sys",
     "libs/megadrive-input",
     "libs/megadrive-graphics",
+    "libs/megadrive-util",
     "tools/cargo-megadrive",
     "examples/megapong",
+    "examples/megacoinflip",
 ]
 
 [profile.release]

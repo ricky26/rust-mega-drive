@@ -1,7 +1,13 @@
 #![no_std]
 
 use core::mem::MaybeUninit;
+
 use megadrive_sys::vdp::{Sprite, VDP};
+
+pub mod default_ascii {
+    include!(concat!(env!("OUT_DIR"), "/default_ascii.rs"));
+}
+mod font;
 
 const MAX_SPRITES: usize = 80;
 

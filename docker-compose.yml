@@ -1,0 +1,13 @@
+---
+version: "3.2"
+
+services:
+  m68k-app-builder:
+    image: rust-m68k:latest
+    environment:
+      - MEGADRIVE_HOME=/rust-mega-drive/share
+      - RUSTUP_TOOLCHAIN=m68k
+      - LLVM_CONFIG=/llvm-m68k/bin/llvm-config
+    volumes:
+    - ./target:/target
+#    command: ["ls", "/rust-mega-drive"]

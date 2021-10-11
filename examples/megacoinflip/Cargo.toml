@@ -1,0 +1,17 @@
+[package]
+name = "megacoinflip"
+version = "0.1.0"
+authors = ["Rein van 't Veer <rein@vantveer.me>"]
+edition = "2018"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+megadrive-sys = { path = "../../libs/megadrive-sys" }
+megadrive-input = { path = "../../libs/megadrive-input" }
+megadrive-graphics = { path = "../../libs/megadrive-graphics" }
+megadrive-util = { path = "../../libs/megadrive-util" }

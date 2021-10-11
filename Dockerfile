@@ -1,19 +1,20 @@
-FROM rust-m68k:latest
+FROM rust-mega-drive:latest
 MAINTAINER rickytaylor26@gmail.com
 MAINTAINER rein@vantveer.me
 
-# Build the rust-mega-drive crate
+# Install Python3 and pip in order to run the build script for the font generator
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip && rm -rf /var/lib/apt/lists/*
+
+# Copy over all files
 COPY . /rust-mega-drive
-WORKDIR /rust-mega-drive
-ENV MEGADRIVE_HOME=/rust-mega-drive/share
-ENV RUSTUP_TOOLCHAIN=m68k
-ENV LLVM_CONFIG=/llvm-m68k/bin/llvm-config
-RUN cargo build --release
 
-# Install the megadrive cargo command
-WORKDIR /rust-mega-drive/tools/cargo-megadrive
-RUN cargo install --path=.
-
-# Build megapong as default command
+# Build pong example
 WORKDIR /rust-mega-drive/examples/megapong
-CMD ["cargo", "megadrive", "--verbose", "build"]
+RUN cargo megadrive --verbose build
+
+# Build coin flip example
+WORKDIR /rust-mega-drive/examples/megacoinflip
+RUN cargo megadrive --verbose build
+
+# For now: copy at runtime the compiled target files to a /target dir that can be mounted using docker run -v
+CMD ["cp", "-r", "/rust-mega-drive/target", "/target"]

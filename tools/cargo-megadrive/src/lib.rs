@@ -129,7 +129,7 @@ impl Builder {
 
         let verbose_flag = OsString::from(if self.verbose { "-v" } else { "" });
         cmd!("cargo", "build", "--manifest-path", &root.manifest_path,
-            "-Z", "unstable-options", "-Z", "build-std=core",
+            "-Z", "unstable-options", "-Z", "build-std=core,alloc",
             "--profile", &self.profile, "--target", &self.target, verbose_flag)
             .run()?;
 

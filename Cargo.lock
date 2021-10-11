@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "aho-corasick"
+version = "0.7.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e37cfd5e7657ada45f742d6e99ca5788580b5c529dc78faf11ece6dc702656f"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -111,6 +120,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpython"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8094679a4e9bfc8035572162624bc800eda35b5f9eff2537b9cd9aacc3d9782e"
+dependencies = [
+ "libc",
+ "num-traits",
+ "paste",
+ "python3-sys",
+]
+
+[[package]]
 name = "duct"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -170,14 +191,25 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.86"
+version = "0.2.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7282d924be3275cec7f6756ff4121987bc6481325397dde6ba3e7802b1a8b1c"
+checksum = "18794a8ad5b29321f790b55d93dfba91e125cb1a9edbd4f8e3150acc771c1a5e"
+
+[[package]]
+name = "megacoinflip"
+version = "0.1.0"
+dependencies = [
+ "megadrive-graphics",
+ "megadrive-input",
+ "megadrive-sys",
+ "megadrive-util",
+]
 
 [[package]]
 name = "megadrive-graphics"
 version = "0.1.0"
 dependencies = [
+ "cpython",
  "megadrive-sys",
 ]
 
@@ -193,12 +225,35 @@ name = "megadrive-sys"
 version = "0.1.0"
 
 [[package]]
+name = "megadrive-util"
+version = "0.1.0"
+dependencies = [
+ "megadrive-graphics",
+ "megadrive-sys",
+]
+
+[[package]]
 name = "megapong"
 version = "0.1.0"
 dependencies = [
  "megadrive-graphics",
  "megadrive-input",
  "megadrive-sys",
+]
+
+[[package]]
+name = "memchr"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
+
+[[package]]
+name = "num-traits"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
+dependencies = [
+ "autocfg",
 ]
 
 [[package]]
@@ -222,6 +277,12 @@ name = "os_str_bytes"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afb2e1c3ee07430c2cf76151675e583e0f19985fa6efae47d6848a3e2c824f85"
+
+[[package]]
+name = "paste"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acbf547ad0c65e31259204bd90935776d1c693cec2f4ff7abb7a1bbbd40dfe58"
 
 [[package]]
 name = "pest"
@@ -266,6 +327,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "python3-sys"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b78af21b29594951a47fc3dac9b9eff0a3f077dec2f780ee943ae16a668f3b6a"
+dependencies = [
+ "libc",
+ "regex",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -273,6 +344,23 @@ checksum = "c3d0b9745dc2debf507c8422de05d7226cc1f0644216dfdfead988f9b1ab32a7"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "regex"
+version = "1.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d07a8629359eb56f1e2fb1652bb04212c072a87ba68546a04065d525673ac461"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-syntax",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.6.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "ryu"
