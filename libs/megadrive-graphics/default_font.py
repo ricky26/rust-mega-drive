@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 # chr(0) is the NUL char, which some IDEs don't like in a .rs file 
 drawable_chars = list(range(32, 128))
 
-boilerplate = """// This file was generated from the Python ascii_rs_generator script, please don't edit directly
+boilerplate = """// This file was generated from the Python default_font.py script, please don't edit directly
 use megadrive_sys::vdp::Tile;
 use megadrive_sys::vdp::SpriteSize::Size1x1;
 use crate::font::Font;
