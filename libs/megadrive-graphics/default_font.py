@@ -1,5 +1,5 @@
 import math
-import os.path
+import os
 from typing import TextIO
 
 from PIL import Image, ImageDraw, ImageFont
@@ -25,7 +25,7 @@ pub static TILE_DATA: &'static [Tile] = &[
 
 
 def generate_image_arrays():
-    output_path = 'src/default_ascii.rs'
+    output_path = os.path.join(os.environ['OUT_DIR'], 'default_ascii.rs')
 
     # Remove in order to overwrite
     if os.path.isfile(output_path):
