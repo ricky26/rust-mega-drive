@@ -14,7 +14,5 @@ fn main() {
         .status()
         .unwrap();
 
-    println!("cargo:rerun-if-changed=src/default_ascii.rs");
     println!("cargo:rerun-if-changed=default_font.py");
-    println!("cargo:rerun-if-changed=build.rs");
 }
