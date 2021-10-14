@@ -1,2 +1,5 @@
 .git
+.github
 Dockerfile*
+build.sh
+docker-compose.yml

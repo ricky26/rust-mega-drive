@@ -1,0 +1,32 @@
+# Builds and pushes a Docker image for the Cargo "megadrive" command
+
+# This images uses a  main Rust/LLVM toolchain base image
+# to cross-compile to Motorola 68000 targets, using a customized
+# toolchain to iron out a few wrinkles in the compiler toolchain.
+
+name: build-and-push-rust-m68k-cargo-megadrive-extension-docker-image
+# This Docker image only rarely, if ever, needs updating, so it should
+# only be executed manually
+on:
+#  - push
+  - workflow_dispatch
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log into Docker repo
+        uses: docker/login-action@v1
+        with:
+          # If unset, will default to Docker Hub
+          registry: ${{ secrets.DOCKER_REGISTRY_PROVIDER }}
+          username: ${{ secrets.DOCKER_REPO_USERNAME }}
+          password: ${{ secrets.DOCKER_REPO_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: Dockerfile.megadrive
+          # Nightly version of Rust 1.53.0 with m68k support
+          tags: ${{ secrets.DOCKER_REGISTRY_PROVIDER }}/${{ github.repository_owner }}/rust-m68k-megadrive:1.53.0-dev
+          push: true
