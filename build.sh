@@ -9,8 +9,13 @@ if [[ "$#" -ne 0 ]]; then
   fi
 fi
 
-docker build -t rust-mega-drive:latest .
-docker run -it --rm -v $(pwd)/target:/target rust-mega-drive:latest
+# Build the crates in the `examples` folder
+docker-compose build mega-drive
+
+# Copy files to mounted target folder
+docker-compose run --rm mega-drive "bash -c cp -r /rust-mega-drive/target /target"
+
+# Re-assign "target" dir to current user
 sudo chown -R $USER:$USER target
 flatpak run org.libretro.RetroArch \
   --load-menu-on-error \
