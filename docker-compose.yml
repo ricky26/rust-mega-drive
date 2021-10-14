@@ -2,8 +2,10 @@
 version: "3.2"
 
 services:
-  m68k-app-builder:
-    image: quay.io/reinvantveer/rust-m68k-megadrive:1.53.0-dev
+  mega-drive:
+    build:
+      context: .
+      dockerfile: Dockerfile.megadrive
     environment:
       - MEGADRIVE_HOME=/rust-mega-drive/share
       - RUSTUP_TOOLCHAIN=m68k
