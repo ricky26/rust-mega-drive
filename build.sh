@@ -10,10 +10,10 @@ if [[ "$#" -ne 0 ]]; then
 fi
 
 # Build the crates in the `examples` folder
-docker-compose build mega-drive
+docker-compose build
 
-# Copy files to mounted target folder
-docker-compose run --rm mega-drive "bash -c cp -r /rust-mega-drive/target /target"
+# Copy the files to the mounted target dir
+docker-compose up
 
 # Re-assign "target" dir to current user
 sudo chown -R $USER:$USER target

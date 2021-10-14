@@ -2,14 +2,12 @@
 version: "3.2"
 
 services:
-  mega-drive:
+  build-mega-drive-examples:
     build:
       context: .
-      dockerfile: Dockerfile.megadrive
     environment:
       - MEGADRIVE_HOME=/rust-mega-drive/share
       - RUSTUP_TOOLCHAIN=m68k
       - LLVM_CONFIG=/llvm-m68k/bin/llvm-config
     volumes:
-    - ./target:/target
-#    command: ["ls", "/rust-mega-drive"]
+      - ./target:/target
